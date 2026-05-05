@@ -312,10 +312,15 @@ h1, h2, h3, h4 {
 }
 
 .hero-title {
-    font-size: clamp(0.9rem, 4vw, 5rem);
+    font-size: clamp(1.5rem, 8vw, 5rem);
     margin-bottom: 1rem;
     text-shadow: 0 10px 30px rgba(0,0,0,0.5);
     white-space: nowrap;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .hero-subtitle {
