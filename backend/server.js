@@ -81,7 +81,11 @@ let bot;
 if (token && adminChatId) {
     bot = new TelegramBot(token, { polling: true });
 
-    // Manejar botones inline
+    // Evitar crash si hay conflicto de instancias
+    bot.on('polling_error', (err) => {
+        console.warn('⚠️ Telegram polling error (ignorado):', err.code || err.message);
+    });
+
     bot.on('callback_query', async (query) => {
         const [action, id] = query.data.split('_');
         const chatId = query.message.chat.id;
