@@ -73,11 +73,22 @@
             resultDiv.className = 'scanning';
             resultDiv.innerText = 'Esperando código QR...';
             nextScanBtn.style.display = 'none';
+            
+            // Reiniciar la cámara
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader",
+                { fps: 10, qrbox: {width: 250, height: 250} },
+                false);
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
         }
 
         function onScanSuccess(decodedText, decodedResult) {
-            if (isProcessing) return; // Prevenir escanear el mismo 20 veces por segundo
+            if (isProcessing) return; 
             isProcessing = true;
+            
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().catch(e => console.error(e)); // Detiene la cámara completamente
+            }
             
             resultDiv.className = 'scanning';
             resultDiv.innerText = 'Verificando en Base de Datos...';
