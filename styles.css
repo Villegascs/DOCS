@@ -721,6 +721,11 @@ h1, h2, h3, h4 {
     transition: var(--transition-fast);
 }
 
+.form-group select option {
+    background-color: #1a1a1a;
+    color: white;
+}
+
 .form-group input:focus, .form-group select:focus {
     outline: none;
     border-color: var(--primary-neon);
