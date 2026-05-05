@@ -7,8 +7,8 @@
     --bg-dark: #050505;
     --bg-darker: #000000;
     --bg-panel: #111111;
-    --primary-neon: #E0FF00; /* Acid Green / Yellow */
-    --primary-neon-hover: #b8d400;
+    --primary-neon: #FFFFFF; /* White */
+    --primary-neon-hover: #CCCCCC; /* Light Gray */
     --accent: #FF2E2E; /* Neon Red */
     
     /* Text Colors */
@@ -312,9 +312,10 @@ h1, h2, h3, h4 {
 }
 
 .hero-title {
-    font-size: clamp(4rem, 10vw, 8rem);
+    font-size: clamp(0.9rem, 4vw, 5rem);
     margin-bottom: 1rem;
     text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    white-space: nowrap;
 }
 
 .hero-subtitle {
