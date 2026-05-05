@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOCS | Underground Sessions</title>
+    <meta name="description" content="DOCS - La experiencia definitiva en fiestas electrónicas underground. Compra tus entradas, escucha nuestros sets y sé parte de la comunidad.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#inicio" class="logo"><img src="Logos/docs%20png.png" alt="DOCS" style="height: 35px; vertical-align: middle;"></a>
+            <div class="nav-links">
+                <a href="#inicio" class="nav-link active">Inicio</a>
+                <a href="#eventos" class="nav-link">Eventos</a>
+                <a href="#tienda" class="nav-link">Tienda</a>
+                <a href="#musica" class="nav-link">Música</a>
+            </div>
+            <a href="#eventos" class="btn-tickets">TICKETS</a>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-btn" aria-label="Abrir menú">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Inicio / Hero Section -->
+    <header id="inicio" class="hero">
+        <div class="hero-overlay"></div>
+        <video autoplay muted loop playsinline class="hero-video">
+            <!-- Usamos un video placeholder estético de fiesta -->
+            <source src="https://cdn.pixabay.com/video/2020/05/24/40061-424888056_large.mp4" type="video/mp4">
+        </video>
+        <div class="hero-content">
+            <div class="hero-badge">Próximo Evento: 15 de Mayo</div>
+            <h1 class="hero-title">NO SLEEP<br><span class="highlight">JUST DANCE</span></h1>
+            <p class="hero-subtitle">La experiencia Boiler Room definitiva. Sumérgete en el sonido, sin barreras.</p>
+            <div class="hero-actions">
+                <a href="#eventos" class="btn-primary">COMPRAR ENTRADAS</a>
+                <a href="#musica" class="btn-secondary">ESCUCHAR SETS</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Eventos Section (Placeholder) -->
+    <section id="eventos" class="section">
+        <div class="container">
+            <h2 class="section-title">Próximos <span class="highlight">Eventos</span></h2>
+            <div class="events-grid">
+                <!-- Event Card 1 -->
+                <div class="event-card">
+                    <div class="event-image">
+                        <img src="https://images.unsplash.com/photo-1574391831460-1d8e059dfee6?q=80&w=800&auto=format&fit=crop" alt="Evento 1">
+                        <div class="event-date">
+                            <span class="day">15</span>
+                            <span class="month">MAY</span>
+                        </div>
+                    </div>
+                    <div class="event-details">
+                        <h3>DOCS Vol. 1: The Genesis</h3>
+                        <p class="location">Secret Location, Caracas</p>
+                        <p class="lineup">Lineup: DJ Placeholder, Audio Void, Techno Synth</p>
+                        <button class="btn-primary full-width" onclick="openPaymentModal()">Tickets ($15)</button>
+                    </div>
+                </div>
+                <!-- Event Card 2 -->
+                <div class="event-card disabled">
+                    <div class="event-image">
+                        <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800&auto=format&fit=crop" alt="Evento 2">
+                        <div class="event-badge">SOLD OUT</div>
+                        <div class="event-date">
+                            <span class="day">02</span>
+                            <span class="month">ABR</span>
+                        </div>
+                    </div>
+                    <div class="event-details">
+                        <h3>DOCS Premiere Session</h3>
+                        <p class="location">Downtown Warehouse</p>
+                        <p class="lineup">Lineup: Groover, Bass Drop</p>
+                        <button class="btn-secondary full-width" disabled>Sold Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tienda Section (Placeholder) -->
+    <section id="tienda" class="section dark-bg">
+        <div class="container">
+            <h2 class="section-title">Merch <span class="highlight">Oficial</span></h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem;">Próximamente. Viste la cultura.</p>
+        </div>
+    </section>
+
+    <!-- Música Section (Placeholder) -->
+    <section id="musica" class="section">
+        <div class="container">
+            <h2 class="section-title">Últimos <span class="highlight">Sets</span></h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem;">Revive la experiencia. Sets grabados en vivo.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-brand">
+                <h2>DOCS</h2>
+                <p>La cultura underground redefinida.</p>
+            </div>
+            <div class="footer-links">
+                <a href="#">Instagram</a>
+                <a href="#">SoundCloud</a>
+                <a href="#">Contacto</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 DOCS Underground Sessions. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Payment Modal (Hidden by default) -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content glass-panel">
+            <span class="close-modal" onclick="closePaymentModal()">&times;</span>
+            <h2>Verificación de <span class="highlight">Pago</span></h2>
+            <p>Para asegurar tus entradas a <strong>DOCS Vol. 1</strong> (€15 c/u), realiza el pago vía Pago Móvil o Zelle y envía el comprobante.</p>
+            
+            <div class="payment-info">
+                <div class="bank-details">
+                    <h4>Pago Móvil</h4>
+                    <p>Banco: Banesco (0134)</p>
+                    <p>Cédula: V-12345678</p>
+                    <p>Teléfono: 0414-1234567</p>
+                    <p>Monto: <strong id="monto-bs" class="highlight">Cargando tasa BCV...</strong></p>
+                </div>
+                <div class="bank-details">
+                    <h4>Zelle</h4>
+                    <p>Correo: pagos@docs.com</p>
+                    <p>Titular: Docs Events LLC</p>
+                </div>
+            </div>
+
+            <form id="paymentForm" class="payment-form">
+                <div class="form-group">
+                    <label for="ticketCount">Número de Entradas</label>
+                    <input type="number" id="ticketCount" value="1" min="1" max="20" required>
+                </div>
+                <div class="form-group">
+                    <label for="name">Nombre y Apellido</label>
+                    <input type="text" id="name" required placeholder="Ej. Carlos Pérez">
+                </div>
+                <div class="form-group">
+                    <label for="email">Correo Electrónico (Para recibir las entradas)</label>
+                    <input type="email" id="email" required placeholder="tu@correo.com">
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cedula">Cédula de Identidad</label>
+                        <input type="text" id="cedula" required placeholder="V-12345678">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Teléfono de Contacto</label>
+                        <input type="tel" id="phone" required placeholder="0414-1234567">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="bank">Método / Banco Emisor</label>
+                        <select id="bank" required>
+                            <option value="">Selecciona una opción</option>
+                            <option value="Zelle">Zelle</option>
+                            <option value="Banesco">Banesco</option>
+                            <option value="Mercantil">Mercantil</option>
+                            <option value="Provincial">Provincial</option>
+                            <option value="Venezuela">Banco de Venezuela</option>
+                            <option value="Otro">Otro (Pago Móvil)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ref">Últimos 6 dígitos (Ref)</label>
+                        <input type="text" id="ref" required placeholder="Ej. 948210" maxlength="6">
+                    </div>
+                </div>
+                <div class="form-group file-upload">
+                    <label for="receipt">Captura del Comprobante</label>
+                    <input type="file" id="receipt" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn-primary full-width">Enviar Verificación</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

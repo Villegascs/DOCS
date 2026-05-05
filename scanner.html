@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOCS | Escáner de Puerta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            margin: 0; padding: 20px; 
+            font-family: 'Inter', sans-serif; 
+            background-color: #050505; color: white; 
+            display: flex; flex-direction: column; align-items: center; 
+        }
+        .logo-img {
+            height: 60px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 10px rgba(224, 255, 0, 0.3));
+        }
+        #reader { 
+            width: 100%; max-width: 500px; 
+            background: #111; border-radius: 10px; 
+            overflow: hidden; margin-bottom: 20px; 
+        }
+        /* Overriding html5-qrcode default styles to make it dark mode */
+        #reader button {
+            background-color: #E0FF00; color: #000;
+            border: none; padding: 10px 20px; font-weight: bold;
+            cursor: pointer; border-radius: 5px; margin: 10px 0;
+        }
+        #reader a { color: #E0FF00; }
+        
+        #result { 
+            width: 100%; max-width: 500px; padding: 20px; 
+            border-radius: 10px; text-align: center; 
+            font-size: 1.2rem; font-weight: bold; 
+            white-space: pre-line; box-sizing: border-box; 
+            transition: all 0.3s ease;
+        }
+        .success { background-color: rgba(0, 255, 0, 0.2); color: #00FF00; border: 2px solid #00FF00; }
+        .error { background-color: rgba(255, 0, 0, 0.2); color: #FF4444; border: 2px solid #FF4444; }
+        .scanning { background-color: rgba(255, 255, 255, 0.1); color: #FFF; border: 2px dashed #444; }
+        
+        #next-scan-btn {
+            display: none;
+            background-color: #E0FF00; color: #000;
+            border: none; padding: 15px 30px; font-weight: bold; font-size: 1.1rem;
+            cursor: pointer; border-radius: 5px; margin-top: 20px;
+            width: 100%; max-width: 500px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        #next-scan-btn:hover { background-color: #c4e000; }
+    </style>
+</head>
+<body>
+    <img src="Logos/docs%20png.png" alt="DOCS" class="logo-img">
+    <p style="color: #888; text-align: center; margin-bottom: 20px;">
+        Apunta la cámara al código QR de la entrada.
+    </p>
+
+    <div id="reader"></div>
+    <div id="result" class="scanning">Esperando código QR...</div>
+    <button id="next-scan-btn" onclick="resetScanner()">Escanear otro código</button>
+
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script>
+        const resultDiv = document.getElementById('result');
+        const nextScanBtn = document.getElementById('next-scan-btn');
+        let isProcessing = false;
+
+        function resetScanner() {
+            isProcessing = false;
+            resultDiv.className = 'scanning';
+            resultDiv.innerText = 'Esperando código QR...';
+            nextScanBtn.style.display = 'none';
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (isProcessing) return; // Prevenir escanear el mismo 20 veces por segundo
+            isProcessing = true;
+            
+            resultDiv.className = 'scanning';
+            resultDiv.innerText = 'Verificando en Base de Datos...';
+
+            fetch('http://localhost:3000/api/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uuid: decodedText })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.valid) {
+                    // Verde: Acceso permitido
+                    resultDiv.className = 'success';
+                    resultDiv.innerText = data.message;
+                } else {
+                    // Rojo: Ya usada o falsa
+                    resultDiv.className = 'error';
+                    resultDiv.innerText = data.message;
+                }
+                
+                // Mostrar botón para volver a escanear
+                nextScanBtn.style.display = 'block';
+            })
+            .catch(err => {
+                console.error(err);
+                resultDiv.className = 'error';
+                resultDiv.innerText = 'Error de conexión con el servidor.';
+                nextScanBtn.style.display = 'block';
+            });
+        }
+
+        function onScanFailure(error) {
+            // Se ejecuta constantemente mientras no encuentre un QR. Lo ignoramos.
+        }
+
+        let html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader",
+            { fps: 10, qrbox: {width: 250, height: 250} },
+            /* verbose= */ false);
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    </script>
+</body>
+</html>
