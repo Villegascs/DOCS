@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía Admin - DOCS Events</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #080808; --panel: #111; --border: rgba(255,255,255,0.08); --white: #fff; --gray: #a0a0a0; --accent: #E0FF00; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--white); font-family:'Inter',sans-serif; line-height:1.7; }
+  header { text-align:center; padding:4rem 2rem 3rem; border-bottom:1px solid var(--border); }
+  header h1 { font-family:'Outfit',sans-serif; font-size:clamp(2rem,6vw,4rem); font-weight:900; letter-spacing:2px; }
+  header p { color:var(--gray); margin-top:.5rem; font-size:1.1rem; }
+  .accent { color:var(--accent); }
+  nav { display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center; padding:1.5rem 2rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(8,8,8,0.95); backdrop-filter:blur(10px); z-index:100; }
+  nav a { color:var(--gray); text-decoration:none; font-size:.85rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; padding:.4rem .9rem; border:1px solid var(--border); border-radius:4px; transition:.2s; }
+  nav a:hover { color:var(--white); border-color:rgba(255,255,255,0.3); }
+  main { max-width:900px; margin:0 auto; padding:3rem 2rem 6rem; }
+  section { margin-bottom:5rem; }
+  h2 { font-family:'Outfit',sans-serif; font-size:1.8rem; font-weight:900; text-transform:uppercase; margin-bottom:2rem; padding-bottom:.75rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:.75rem; }
+  h2 .num { background:var(--accent); color:#000; font-size:1rem; width:2rem; height:2rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:900; flex-shrink:0; }
+  h3 { font-family:'Outfit',sans-serif; font-size:1.15rem; font-weight:700; text-transform:uppercase; margin:2rem 0 .75rem; color:var(--accent); }
+  p { color:var(--gray); margin-bottom:1rem; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:1.5rem; margin:1rem 0; }
+  .card strong { color:var(--white); display:block; margin-bottom:.5rem; font-family:'Outfit',sans-serif; font-size:1rem; text-transform:uppercase; letter-spacing:.5px; }
+  .step { display:flex; gap:1rem; margin:.75rem 0; align-items:flex-start; }
+  .step .n { background:var(--border); border:1px solid rgba(255,255,255,0.15); color:var(--white); font-weight:700; min-width:1.8rem; height:1.8rem; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.85rem; flex-shrink:0; margin-top:.1rem; }
+  .step p { margin:0; }
+  code { background:#1a1a1a; border:1px solid var(--border); padding:.2rem .5rem; border-radius:4px; font-family:monospace; font-size:.9rem; color:var(--accent); }
+  .code-block { background:#0d0d0d; border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:1.25rem 1.5rem; margin:1rem 0; font-family:monospace; font-size:.95rem; color:#ccc; overflow-x:auto; white-space:pre; }
+  .warn { background:rgba(255,46,46,0.08); border:1px solid rgba(255,46,46,0.3); border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .warn strong { color:#ff6b6b; display:block; margin-bottom:.3rem; }
+  .tip { background:rgba(224,255,0,0.05); border:1px solid rgba(224,255,0,0.2); border-radius:8px; padding:1rem 1.25rem; margin:1rem 0; }
+  .tip strong { color:var(--accent); display:block; margin-bottom:.3rem; }
+  .cmd-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
+  .cmd { background:#0d0d0d; border:1px solid var(--border); border-radius:8px; padding:1.25rem; }
+  .cmd code { background:transparent; border:none; padding:0; font-size:1.1rem; color:var(--accent); font-weight:700; }
+  .cmd p { margin:.5rem 0 0; font-size:.9rem; }
+  table { width:100%; border-collapse:collapse; margin:1rem 0; }
+  th { background:#1a1a1a; color:var(--white); font-family:'Outfit',sans-serif; font-size:.85rem; text-transform:uppercase; letter-spacing:1px; padding:.75rem 1rem; text-align:left; border:1px solid var(--border); }
+  td { padding:.75rem 1rem; border:1px solid var(--border); color:var(--gray); font-size:.9rem; }
+  tr:nth-child(even) td { background:#0d0d0d; }
+  footer { text-align:center; padding:2rem; border-top:1px solid var(--border); color:var(--gray); font-size:.85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DOCS <span class="accent">EVENTS</span></h1>
+  <p>Guía de Administración del Sistema</p>
+</header>
+
+<nav>
+  <a href="#inicio">Inicio</a>
+  <a href="#compras">Compras</a>
+  <a href="#telegram">Telegram Bot</a>
+  <a href="#servidor">Servidor</a>
+  <a href="#cloudflare">Cloudflare</a>
+  <a href="#firebase">Firebase</a>
+  <a href="#excel">Reportes</a>
+  <a href="#scanner">Escáner</a>
+</nav>
+
+<main>
+
+  <!-- SECCIÓN 1: CÓMO FUNCIONA TODO -->
+  <section id="inicio">
+    <h2><span class="num">0</span> Cómo Funciona el Sistema</h2>
+    <p>Este es el flujo completo del sistema DOCS de principio a fin:</p>
+    <div class="card">
+      <div class="step"><div class="n">1</div><p>El asistente entra a <strong style="color:#fff">docsevents.web.app</strong>, llena el formulario de compra y sube su comprobante de pago.</p></div>
+      <div class="step"><div class="n">2</div><p>El formulario envía los datos al servidor Node.js que corre en tu computadora y que está expuesto al internet mediante el túnel de Cloudflare.</p></div>
+      <div class="step"><div class="n">3</div><p>El servidor guarda el pago en la base de datos y te envía una notificación al bot de Telegram con la foto del comprobante.</p></div>
+      <div class="step"><div class="n">4</div><p>Tú revisas en Telegram y presionas ✅ Aprobar o ❌ Rechazar.</p></div>
+      <div class="step"><div class="n">5</div><p>Al aprobar, el servidor genera los códigos QR y los envía por correo electrónico al asistente automáticamente.</p></div>
+      <div class="step"><div class="n">6</div><p>El día del evento, usas el <strong style="color:#fff">scanner.html</strong> para escanear los QRs y validar el acceso.</p></div>
+    </div>
+    <div class="warn"><strong>⚠️ Requisito Esencial</strong>Para que todo funcione, tu computadora tiene que estar encendida y con el servidor corriendo. Si apagas la PC, el sistema deja de funcionar.</div>
+  </section>
+
+  <!-- SECCIÓN 2: SERVIDOR -->
+  <section id="servidor">
+    <h2><span class="num">1</span> Iniciar el Servidor</h2>
+    <p>El servidor es el cerebro del sistema. Debes iniciarlo cada vez que enciendas la computadora antes de recibir compradores.</p>
+
+    <h3>Cómo iniciarlo</h3>
+    <div class="step"><div class="n">1</div><p>Abre una terminal de PowerShell en la carpeta del proyecto: <code>C:\Users\arman_u5omxhq\Desktop\Web\DOCS\backend</code></p></div>
+    <div class="step"><div class="n">2</div><p>Escribe el siguiente comando y presiona Enter:</p></div>
+    <div class="code-block">node server.js</div>
+    <div class="step"><div class="n">3</div><p>Debes ver el mensaje: <code>🚀 DOCS Backend corriendo en el puerto 3000</code></p></div>
+
+    <div class="tip"><strong>💡 Consejo</strong>Deja la ventana de la terminal abierta y minimizada. Si la cierras, el servidor se apaga.</div>
+  </section>
+
+  <!-- SECCIÓN 3: CLOUDFLARE -->
+  <section id="cloudflare">
+    <h2><span class="num">2</span> Iniciar el Túnel de Cloudflare</h2>
+    <p>El túnel de Cloudflare es lo que conecta tu servidor local (en tu PC) con el internet para que el sitio web pueda hablar con él. Debes iniciarlo junto con el servidor.</p>
+
+    <div class="warn"><strong>⚠️ Importante: URL Temporal</strong>Cada vez que abres un nuevo túnel, Cloudflare te da una URL diferente. Debes actualizar los archivos <code>script.js</code> y <code>scanner.html</code> con la nueva URL cada vez.</div>
+
+    <h3>Paso 1: Iniciar el túnel</h3>
+    <p>Abre una segunda terminal y navega a la carpeta del proyecto:</p>
+    <div class="code-block">cd C:\Users\arman_u5omxhq\Desktop\Web\DOCS</div>
+    <p>Luego ejecuta:</p>
+    <div class="code-block">.\cloudflared.exe tunnel --url http://localhost:3000</div>
+
+    <h3>Paso 2: Copiar la nueva URL</h3>
+    <p>Busca en el output de la terminal una línea que diga:</p>
+    <div class="code-block">Your quick Tunnel has been created! Visit it at:
+https://NUEVA-URL-AQUI.trycloudflare.com</div>
+    <p>Copia esa URL completa.</p>
+
+    <h3>Paso 3: Actualizar los archivos</h3>
+    <p>Abre el archivo <code>script.js</code> y busca la línea que contiene <code>/api/tickets/request</code>. Reemplaza la URL vieja con la nueva. Luego haz lo mismo en <code>scanner.html</code> con la línea que contiene <code>/api/verify</code>.</p>
+
+    <h3>Paso 4: Subir los cambios a Firebase</h3>
+    <p>Después de guardar los archivos, ejecuta en la terminal:</p>
+    <div class="code-block">firebase deploy --only hosting</div>
+    <p>Espera que diga <code>Deploy complete!</code> y listo.</p>
+  </section>
+
+  <!-- SECCIÓN 4: COMPRAS -->
+  <section id="compras">
+    <h2><span class="num">3</span> Proceso de Compra</h2>
+    <p>Esto es lo que vive el asistente cuando compra su entrada:</p>
+
+    <div class="step"><div class="n">1</div><p>Entra a <strong style="color:#fff">docsevents.web.app</strong> y hace clic en <strong style="color:#fff">COMPRAR ENTRADAS</strong>.</p></div>
+    <div class="step"><div class="n">2</div><p>Se abre el modal con los datos bancarios para hacer el pago (Pago Móvil o Zelle).</p></div>
+    <div class="step"><div class="n">3</div><p>Llena el formulario con sus datos personales, el banco desde donde pagó y los últimos 6 dígitos de la referencia.</p></div>
+    <div class="step"><div class="n">4</div><p>Sube la captura de pantalla del comprobante de pago.</p></div>
+    <div class="step"><div class="n">5</div><p>Hace clic en <strong style="color:#fff">Enviar Verificación</strong>. El sistema le muestra un mensaje de confirmación.</p></div>
+    <div class="step"><div class="n">6</div><p>Espera recibir el correo con sus entradas (QR) una vez que tú apruebes el pago.</p></div>
+
+    <div class="warn"><strong>⚠️ Si el asistente ve "Error de conexión"</strong>Significa que el servidor está apagado o el túnel de Cloudflare venció. Debes iniciarlos y actualizar la URL.</div>
+  </section>
+
+  <!-- SECCIÓN 5: TELEGRAM -->
+  <section id="telegram">
+    <h2><span class="num">4</span> Comandos del Bot de Telegram</h2>
+    <p>Tienes un bot de Telegram que puedes usar para gestionar todo. Escríbele directamente en el chat.</p>
+
+    <div class="cmd-grid">
+      <div class="cmd">
+        <code>/historial</code>
+        <p>Te envía un archivo Excel (.csv) con todos los pagos aprobados para el evento actual. Columnas: Nombre, Cédula, Correo, Teléfono, Banco y Nº de Entradas.</p>
+      </div>
+      <div class="cmd">
+        <code>/asistencias</code>
+        <p>Te envía un archivo Excel con las personas que ya ingresaron al evento (QR escaneado). Columnas: Nombre, Cédula y Hora de Ingreso.</p>
+      </div>
+      <div class="cmd">
+        <code>/cerrar_lista</code>
+        <p>Cierra la lista del evento actual. Archiva todos los pagos y desactiva todos los QRs. Te envía un respaldo antes de cerrar. Útil para empezar el siguiente evento.</p>
+      </div>
+    </div>
+
+    <h3>Aprobar o Rechazar Pagos</h3>
+    <p>Cuando llega un nuevo pago, el bot te envía un mensaje con la foto del comprobante y los datos del comprador. Solo tienes que presionar:</p>
+    <div class="card">
+      <div class="step"><div class="n">✅</div><p><strong style="color:#fff">Aprobar y Enviar:</strong> Genera los QRs y los manda por correo al asistente de forma automática.</p></div>
+      <div class="step"><div class="n">❌</div><p><strong style="color:#fff">Rechazar:</strong> Marca el pago como rechazado. El asistente no recibe nada.</p></div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 6: REPORTES -->
+  <section id="excel">
+    <h2><span class="num">5</span> Reportes en Excel</h2>
+    <p>Puedes obtener dos tipos de reportes directamente desde Telegram. Los archivos se llaman <code>.csv</code> y se abren directamente en Microsoft Excel o Google Sheets.</p>
+
+    <table>
+      <tr>
+        <th>Comando</th>
+        <th>Nombre del archivo</th>
+        <th>Columnas</th>
+      </tr>
+      <tr>
+        <td><code>/historial</code></td>
+        <td>aprobados.csv</td>
+        <td>Nombre, Cédula, Correo, Teléfono, Banco, Nº Entradas</td>
+      </tr>
+      <tr>
+        <td><code>/asistencias</code></td>
+        <td>asistencias.csv</td>
+        <td>Nombre, Cédula, Hora de Ingreso</td>
+      </tr>
+      <tr>
+        <td><code>/cerrar_lista</code></td>
+        <td>respaldo_cierre_lista.csv</td>
+        <td>Nombre, Cédula, Correo, Teléfono, Banco, Nº Entradas</td>
+      </tr>
+    </table>
+
+    <div class="tip"><strong>💡 Abrir en Excel</strong>En Windows, haz doble clic en el archivo .csv y se abrirá directamente en Excel con todas las columnas separadas. Si los caracteres con tilde (á, é, ñ) se ven mal, abre Excel, ve a Datos → Desde texto/CSV y selecciona el archivo con codificación UTF-8.</div>
+  </section>
+
+  <!-- SECCIÓN 7: ESCÁNER -->
+  <section id="scanner">
+    <h2><span class="num">6</span> Escáner de Entradas</h2>
+    <p>El día del evento, usa el escáner para validar las entradas de los asistentes en la puerta.</p>
+
+    <h3>Cómo usar el escáner</h3>
+    <div class="step"><div class="n">1</div><p>Asegúrate de que el servidor y el túnel de Cloudflare estén corriendo.</p></div>
+    <div class="step"><div class="n">2</div><p>Abre el archivo <code>scanner.html</code> en tu navegador, o accede a <strong style="color:#fff">docsevents.web.app/scanner.html</strong> desde tu teléfono.</p></div>
+    <div class="step"><div class="n">3</div><p>Selecciona la cámara que quieres usar y dale los permisos cuando el navegador los pida.</p></div>
+    <div class="step"><div class="n">4</div><p>Apunta la cámara al QR del asistente. El sistema lo validará automáticamente.</p></div>
+
+    <h3>Resultados del Escáner</h3>
+    <div class="card"><strong style="color:#4ade80">✅ ACCESO PERMITIDO</strong><p>La entrada es válida y el asistente puede pasar. El QR queda marcado como usado.</p></div>
+    <div class="card"><strong style="color:#f87171">❌ ENTRADA YA USADA</strong><p>Este QR ya fue escaneado antes. No dejar pasar.</p></div>
+    <div class="card"><strong style="color:#f87171">❌ ENTRADA INVÁLIDA</strong><p>El QR no existe en la base de datos o pertenece a un evento anterior. No dejar pasar.</p></div>
+  </section>
+
+  <!-- SECCIÓN 8: NUEVO EVENTO -->
+  <section id="firebase">
+    <h2><span class="num">7</span> Iniciar un Nuevo Evento</h2>
+    <p>Cuando termina una fiesta y quieres empezar a vender entradas para la siguiente, sigue estos pasos:</p>
+
+    <div class="step"><div class="n">1</div><p>Escríbele al bot de Telegram el comando <code>/cerrar_lista</code>.</p></div>
+    <div class="step"><div class="n">2</div><p>El bot te pedirá confirmación. Presiona el botón <strong style="color:#fff">⚠️ SÍ, CERRAR LISTA</strong>.</p></div>
+    <div class="step"><div class="n">3</div><p>El bot te enviará un archivo Excel con el historial completo como respaldo.</p></div>
+    <div class="step"><div class="n">4</div><p>Todos los QRs del evento anterior quedarán desactivados. ¡Listo para el nuevo evento!</p></div>
+    <div class="step"><div class="n">5</div><p>Si quieres, actualiza la fecha del próximo evento en <code>index.html</code> buscando la línea <code>Próximo Evento: 15 de Mayo</code> y cambiándola.</p></div>
+
+    <div class="warn"><strong>⚠️ Esto es irreversible</strong>Una vez que cierras la lista, los QRs viejos no funcionarán en el escáner. Asegúrate de descargar el Excel de respaldo antes.</div>
+  </section>
+
+  <!-- RESUMEN RÁPIDO -->
+  <section>
+    <h2><span class="num">✓</span> Checklist del Día del Evento</h2>
+    <div class="card">
+      <div class="step"><div class="n">□</div><p>Encender la computadora y abrir una terminal.</p></div>
+      <div class="step"><div class="n">□</div><p>Iniciar el servidor: ir a la carpeta <code>backend</code> y ejecutar <code>node server.js</code>.</p></div>
+      <div class="step"><div class="n">□</div><p>Iniciar el túnel: volver a la carpeta <code>DOCS</code> y ejecutar <code>.\cloudflared.exe tunnel --url http://localhost:3000</code>.</p></div>
+      <div class="step"><div class="n">□</div><p>Copiar la nueva URL de Cloudflare, actualizar <code>script.js</code> y <code>scanner.html</code>.</p></div>
+      <div class="step"><div class="n">□</div><p>Ejecutar <code>firebase deploy --only hosting</code> para subir los cambios.</p></div>
+      <div class="step"><div class="n">□</div><p>Probar el formulario de compra en <code>docsevents.web.app</code> para confirmar que funciona.</p></div>
+      <div class="step"><div class="n">□</div><p>En la puerta: abrir <code>scanner.html</code> en el teléfono con la cámara lista.</p></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>DOCS Events &copy; 2026 — Guía de Administración Interna</p>
+</footer>
+
+</body>
+</html>
