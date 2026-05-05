@@ -79,12 +79,14 @@ const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 let bot;
 
 if (token && adminChatId) {
-    bot = new TelegramBot(token, { polling: true });
+    // Usar webhook en lugar de polling para evitar conflictos 409 en producción
+    const RENDER_URL = process.env.RENDER_EXTERNAL_URL || 'https://docs-dlvkb.onrender.com';
+    bot = new TelegramBot(token, { polling: false });
 
-    // Evitar crash si hay conflicto de instancias
-    bot.on('polling_error', (err) => {
-        console.warn('⚠️ Telegram polling error (ignorado):', err.code || err.message);
-    });
+    // Registrar webhook con Telegram
+    bot.setWebHook(`${RENDER_URL}/telegram-webhook`)
+        .then(() => console.log('✅ Telegram webhook registrado'))
+        .catch(err => console.warn('⚠️ Webhook setup error:', err.message));
 
     bot.on('callback_query', async (query) => {
         const [action, id] = query.data.split('_');
