@@ -19,17 +19,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Configurar Multer para subir imágenes
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, 'uploads');
-        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
+// Configurar Multer para subir imágenes a la Memoria (Base64)
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Configurar Base de Datos SQLite
@@ -50,6 +41,13 @@ const db = new sqlite3.Database('./docs_tickets.db', (err) => {
             photo_path TEXT,
             status TEXT DEFAULT 'pending',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+        db.run(`CREATE TABLE IF NOT EXISTS qr_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER,
+            uuid TEXT,
+            status TEXT DEFAULT 'approved',
+            FOREIGN KEY(ticket_id) REFERENCES tickets(id)
         )`);
     }
 });
@@ -94,9 +92,12 @@ const transporter = nodemailer.createTransport({
 app.post('/api/tickets/request', upload.single('receipt'), (req, res) => {
     try {
         const { name, email, cedula, phone, bank, ref, ticketCount, totalBs } = req.body;
-        const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
-        if (!photoPath) return res.status(400).json({ error: 'Falta el comprobante de pago' });
+        if (!req.file) return res.status(400).json({ error: 'Falta el comprobante de pago' });
+
+        const photoBase64 = req.file.buffer.toString('base64');
+        const photoMimeType = req.file.mimetype;
+        const photoPath = `data:${photoMimeType};base64,${photoBase64}`;
 
         const stmt = db.prepare(`INSERT INTO tickets (name, email, cedula, phone, bank, ref, ticket_count, total_bs, photo_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         stmt.run([name, email, cedula, phone, bank, ref, ticketCount, totalBs, photoPath], function(err) {
@@ -115,9 +116,9 @@ app.post('/api/tickets/request', upload.single('receipt'), (req, res) => {
                                 `💰 **Total Bs**: ${totalBs}\n` +
                                 `🏦 **Banco**: ${bank} (Ref: ${ref})`;
 
-                const photoFullPath = path.join(__dirname, photoPath);
+                const photoBuffer = Buffer.from(photoBase64, 'base64');
                 
-                bot.sendPhoto(adminChatId, photoFullPath, {
+                bot.sendPhoto(adminChatId, photoBuffer, {
                     caption: caption,
                     parse_mode: 'Markdown',
                     reply_markup: {
@@ -150,7 +151,7 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
         const ticketUuid = uuidv4();
         
         // Actualizar BD
-        db.run(`UPDATE tickets SET status = 'approved', uuid = ? WHERE id = ?`, [ticketUuid, id], async (err) => {
+        db.run(`UPDATE tickets SET status = 'approved' WHERE id = ?`, [id], async (err) => {
             if (err) return console.error(err);
 
             // Cambiar mensaje en Telegram
@@ -160,10 +161,34 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
                 reply_markup: { inline_keyboard: [] }
             });
 
-            // Generar QR
+            // Generar QRs
             try {
-                const qrDataUrl = await QRCode.toDataURL(ticketUuid, { color: { dark: '#000000', light: '#E0FF00' } });
-                const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
+                const ticketCount = row.ticket_count;
+                const attachments = [];
+                let qrHtml = '';
+                
+                for(let i=0; i<ticketCount; i++) {
+                    const ticketUuid = uuidv4();
+                    
+                    // Insertar QR individual
+                    await new Promise((resolve) => {
+                        db.run(`INSERT INTO qr_codes (ticket_id, uuid) VALUES (?, ?)`, [id, ticketUuid], resolve);
+                    });
+                    
+                    const qrDataUrl = await QRCode.toDataURL(ticketUuid, { color: { dark: '#000000', light: '#E0FF00' } });
+                    const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
+                    
+                    attachments.push({
+                        filename: `ticket-${i+1}.png`,
+                        content: qrBuffer,
+                        cid: `qrcode_image_${i}`
+                    });
+                    
+                    qrHtml += `
+                        <h3 style="color: #ccc;">Entrada ${i+1} de ${ticketCount}</h3>
+                        <img src="cid:qrcode_image_${i}" alt="QR Entrada ${i+1}" style="margin: 10px 0; border-radius: 10px; width: 250px;">
+                    `;
+                }
                 
                 // Enviar Correo
                 const mailOptions = {
@@ -175,18 +200,12 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
                             <h1 style="color: #E0FF00; letter-spacing: 2px;">DOCS</h1>
                             <h2>¡Pago Verificado!</h2>
                             <p>Hola ${row.name}, tu pago de ${row.total_bs} ha sido verificado con éxito.</p>
-                            <p>Aquí tienes tu código QR para ingresar al evento (Válido por ${row.ticket_count} entradas).</p>
-                            <img src="cid:qrcode_image" alt="Tu QR de Acceso" style="margin: 20px 0; border-radius: 10px; width: 250px;">
-                            <p style="color: #A0A0A0;">No compartas este código con nadie. Será escaneado en la puerta.</p>
+                            <p>Aquí tienes tus códigos QR para ingresar al evento. <strong>Cada QR es válido para 1 persona.</strong></p>
+                            ${qrHtml}
+                            <p style="color: #A0A0A0; margin-top: 30px;">No compartas estos códigos con nadie. Serán escaneados individualmente en la puerta.</p>
                         </div>
                     `,
-                    attachments: [
-                        {
-                            filename: 'ticket-qr.png',
-                            content: qrBuffer,
-                            cid: 'qrcode_image'
-                        }
-                    ]
+                    attachments: attachments
                 };
                 
                 transporter.sendMail(mailOptions, (error, info) => {
@@ -225,23 +244,26 @@ app.post('/api/verify', (req, res) => {
     const { uuid } = req.body;
     if (!uuid) return res.status(400).json({ valid: false, message: 'No se proveyó código QR' });
 
-    db.get(`SELECT * FROM tickets WHERE uuid = ?`, [uuid], (err, row) => {
+    db.get(`SELECT qr_codes.*, tickets.name, tickets.ticket_count 
+            FROM qr_codes 
+            JOIN tickets ON qr_codes.ticket_id = tickets.id 
+            WHERE qr_codes.uuid = ?`, [uuid], (err, row) => {
         if (err) return res.status(500).json({ valid: false, message: 'Error del servidor' });
         
         if (!row) return res.json({ valid: false, status: 'invalid', message: '❌ ENTRADA INVÁLIDA (No existe)' });
         
         if (row.status === 'used') {
-            return res.json({ valid: false, status: 'used', message: `❌ ENTRADA YA USADA\nNombre: ${row.name}\nEntradas: ${row.ticket_count}` });
+            return res.json({ valid: false, status: 'used', message: `❌ ENTRADA YA USADA\nNombre: ${row.name}` });
         }
         
         if (row.status === 'approved') {
             // Marcar como usada
-            db.run(`UPDATE tickets SET status = 'used' WHERE id = ?`, [row.id], (err) => {
+            db.run(`UPDATE qr_codes SET status = 'used' WHERE id = ?`, [row.id], (err) => {
                 if (err) return res.status(500).json({ valid: false, message: 'Error actualizando ticket' });
                 return res.json({ 
                     valid: true, 
                     status: 'success', 
-                    message: `✅ ACCESO PERMITIDO\nNombre: ${row.name}\nEntradas válidas: ${row.ticket_count}` 
+                    message: `✅ ACCESO PERMITIDO\nNombre: ${row.name}\nEntrada válida para 1 persona.` 
                 });
             });
         } else {

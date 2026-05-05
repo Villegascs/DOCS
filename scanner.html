@@ -82,11 +82,10 @@
             resultDiv.className = 'scanning';
             resultDiv.innerText = 'Verificando en Base de Datos...';
 
-            fetch('https://breezy-games-win.loca.lt/api/verify', {
+            fetch('http://192.168.0.101:3000/api/verify', {
                 method: 'POST',
                 headers: { 
-                    'Content-Type': 'application/json',
-                    'Bypass-Tunnel-Reminder': 'true'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ uuid: decodedText })
             })
