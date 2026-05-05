@@ -120,8 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Enviar al Backend (puerto 3000)
-                const response = await fetch('http://localhost:3000/api/tickets/request', {
+                const response = await fetch('https://breezy-games-win.loca.lt/api/tickets/request', {
                     method: 'POST',
+                    headers: {
+                        'Bypass-Tunnel-Reminder': 'true'
+                    },
                     body: formData
                 });
 

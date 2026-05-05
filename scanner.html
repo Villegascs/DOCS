@@ -82,9 +82,12 @@
             resultDiv.className = 'scanning';
             resultDiv.innerText = 'Verificando en Base de Datos...';
 
-            fetch('http://localhost:3000/api/verify', {
+            fetch('https://breezy-games-win.loca.lt/api/verify', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Bypass-Tunnel-Reminder': 'true'
+                },
                 body: JSON.stringify({ uuid: decodedText })
             })
             .then(res => res.json())
