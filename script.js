@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Enviar al Backend (puerto 3000)
-                const response = await fetch('https://social-geckos-watch.loca.lt/api/tickets/request', {
+                const response = await fetch('https://florists-vessels-among-electrical.trycloudflare.com/api/tickets/request', {
                     method: 'POST',
                     body: formData
                 });

@@ -129,7 +129,7 @@ app.post('/api/tickets/request', upload.single('receipt'), (req, res) => {
                             ]
                         ]
                     }
-                }).catch(e => console.error("Error enviando a Telegram:", e));
+                }, { filename: 'comprobante.jpg', contentType: photoMimeType }).catch(e => console.error("Error enviando a Telegram:", e));
             }
 
             res.json({ success: true, message: 'Pago registrado. Esperando verificación.' });
