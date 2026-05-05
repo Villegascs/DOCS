@@ -248,7 +248,7 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             const ticketUuid = uuidv4();
             await pool.query(`INSERT INTO qr_codes (ticket_id, uuid) VALUES ($1, $2)`, [id, ticketUuid]);
 
-            const qrDataUrl = await QRCode.toDataURL(ticketUuid, { color: { dark: '#000000', light: '#E0FF00' } });
+            const qrDataUrl = await QRCode.toDataURL(ticketUuid, { color: { dark: '#000000', light: '#FFFFFF' } });
             const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
 
             attachments.push({ filename: `ticket-${i+1}.png`, content: qrBuffer, cid: `qrcode_image_${i}` });
@@ -260,7 +260,7 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             to: row.email,
             subject: 'Tus Entradas para DOCS Vol. 1',
             html: `<div style="background:#050505;color:white;padding:40px;font-family:sans-serif;text-align:center;">
-                <h1 style="color:#E0FF00;letter-spacing:2px;">DOCS</h1>
+                <h1 style="color:#FFFFFF;letter-spacing:2px;">DOCS</h1>
                 <h2>¡Pago Verificado!</h2>
                 <p>Hola ${row.name}, tu pago de ${row.total_bs} ha sido verificado con éxito.</p>
                 <p>Aquí tienes tus códigos QR. <strong>Cada QR es válido para 1 persona.</strong></p>

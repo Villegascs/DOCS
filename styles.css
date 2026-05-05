@@ -137,7 +137,7 @@ h1, h2, h3, h4 {
 .btn-primary:hover {
     background-color: var(--primary-neon-hover);
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(224, 255, 0, 0.2);
+    box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
 }
 
 .btn-secondary {
@@ -439,7 +439,7 @@ h1, h2, h3, h4 {
 
 .event-card:hover:not(.disabled) {
     transform: translateY(-10px);
-    border-color: rgba(224, 255, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 }
 
