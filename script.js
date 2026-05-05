@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Enviar al Backend (puerto 3000)
-                const response = await fetch('https://granted-item-anthony-allergy.trycloudflare.com/api/tickets/request', {
+                const response = await fetch('https://docs-dlvkb.onrender.com/api/tickets/request', {
                     method: 'POST',
                     body: formData
                 });
