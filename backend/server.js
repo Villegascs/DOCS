@@ -294,14 +294,6 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
 
         const ticketCount = row.ticket_count;
         const attachments = [];
-        
-        try {
-            const logoBuffer = fs.readFileSync(path.join(__dirname, 'assets', 'logo.png'));
-            attachments.push({ filename: 'logo.png', content: logoBuffer, cid: 'docs_logo' });
-        } catch (e) {
-            console.error("Error cargando logo para email", e);
-        }
-
         let qrHtml = '';
 
         for (let i = 0; i < ticketCount; i++) {
@@ -347,7 +339,7 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             to: row.email,
             subject: 'Tus Entradas para DOCS Vol. 1',
             html: `<div style="background:#050505;color:white;padding:40px;font-family:sans-serif;text-align:center;">
-                <img src="cid:docs_logo" style="max-height:80px;margin-bottom:20px;" alt="DOCS">
+                <img src="https://docsevents.web.app/Logos/docs%20png.png" style="max-height:80px;margin-bottom:20px;" alt="DOCS">
                 <h2>¡Pago Verificado!</h2>
                 <p>Hola ${row.name}, tu pago de Bs. ${row.total_bs} ha sido verificado con éxito.</p>
                 <p>Aquí tienes tus códigos QR. <strong>Cada entrada es válida para 1 persona.</strong></p>
