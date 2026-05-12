@@ -321,10 +321,35 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             attachments
         };
 
-        transporter.sendMail(mailOptions, (err, info) => {
-            if (err) console.error("Error email:", err);
-            else console.log("Email enviado:", info.response);
-        });
+        if (process.env.APPS_SCRIPT_WEBHOOK_URL) {
+            // Enviar correo usando el puente de Google Apps Script para evitar bloqueos SMTP de Railway
+            const payload = {
+                to: mailOptions.to,
+                subject: mailOptions.subject,
+                html: mailOptions.html,
+                attachments: attachments.map(att => ({
+                    filename: att.filename,
+                    mimeType: 'image/png',
+                    base64: att.content.toString('base64'),
+                    cid: att.cid
+                }))
+            };
+            
+            fetch(process.env.APPS_SCRIPT_WEBHOOK_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => console.log("Email enviado vía Apps Script:", data))
+            .catch(err => console.error("Error en Apps Script:", err));
+        } else {
+            // Usar Nodemailer clásico (falla en Railway si los puertos SMTP están bloqueados)
+            transporter.sendMail(mailOptions, (err, info) => {
+                if (err) console.error("Error email SMTP:", err);
+                else console.log("Email enviado SMTP:", info.response);
+            });
+        }
 
     } catch (e) {
         console.error("Error en handleApprove:", e);
