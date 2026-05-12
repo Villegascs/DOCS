@@ -8,6 +8,7 @@ const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const fs = require('fs');
+const Jimp = require('jimp');
 require('dotenv').config();
 
 const app = express();
@@ -299,11 +300,38 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             const ticketUuid = uuidv4();
             await runQuery(`INSERT INTO qr_codes (ticket_id, uuid) VALUES (?, ?)`, [id, ticketUuid]);
 
-            const qrDataUrl = await QRCode.toDataURL(ticketUuid, { color: { dark: '#000000', light: '#FFFFFF' } });
+            const qrDataUrl = await QRCode.toDataURL(ticketUuid, { color: { dark: '#000000', light: '#FFFFFF' }, margin: 2 });
             const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
 
-            attachments.push({ filename: `ticket-${i+1}.png`, content: qrBuffer, cid: `qrcode_image_${i}` });
-            qrHtml += `<h3 style="color:#ccc;">Entrada ${i+1} de ${ticketCount}</h3><img src="cid:qrcode_image_${i}" style="margin:10px 0;border-radius:10px;width:250px;">`;
+            // --- JIMP TICKET GENERATION ---
+            const image = new Jimp(600, 1000, '#050505');
+            try {
+                const logo = await Jimp.read(path.join(__dirname, 'assets', 'logo.png'));
+                logo.resize(Jimp.AUTO, 120);
+                const logoX = (600 - logo.bitmap.width) / 2;
+                image.composite(logo, logoX, 60);
+            } catch (e) { console.error("Logo no encontrado", e); }
+            
+            const fontTitle = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
+            const fontSub = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
+
+            image.print(fontTitle, 0, 240, { text: "ENTRADA OFICIAL", alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER }, 600);
+            image.print(fontSub, 0, 300, { text: `Titular: ${row.name}`, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER }, 600);
+            image.print(fontSub, 0, 330, { text: `Entrada: ${i+1} de ${ticketCount}`, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER }, 600);
+            
+            const qr = await Jimp.read(qrBuffer);
+            qr.resize(350, 350);
+            const qrX = (600 - qr.bitmap.width) / 2;
+            image.composite(qr, qrX, 420);
+
+            image.print(fontSub, 0, 830, { text: "NO COMPARTAS ESTE CÓDIGO", alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER }, 600);
+            image.print(fontSub, 0, 860, { text: `ID: ${ticketUuid.split('-')[0]}`, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER }, 600);
+
+            const finalBuffer = await image.getBufferAsync(Jimp.MIME_PNG);
+            // --------------------------------
+
+            attachments.push({ filename: `entrada-docs-${i+1}.png`, content: finalBuffer, cid: `qrcode_image_${i}` });
+            qrHtml += `<h3 style="color:#ccc;">Entrada ${i+1} de ${ticketCount}</h3><img src="cid:qrcode_image_${i}" style="margin:10px 0;border-radius:10px;width:100%;max-width:350px;">`;
         }
 
         const mailOptions = {
