@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
 const TelegramBot = require('node-telegram-bot-api');
 const nodemailer = require('nodemailer');
 const QRCode = require('qrcode');
@@ -31,19 +31,24 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // =========================================
-// CONFIGURAR BASE DE DATOS POSTGRESQL
+// CONFIGURAR BASE DE DATOS SQLITE (GLITCH PERSISTENT)
 // =========================================
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('sslmode') 
-        ? { rejectUnauthorized: false } 
-        : false
+// En Glitch, la carpeta .data persiste entre reinicios.
+const dbFolder = path.join(__dirname, '.data');
+if (!fs.existsSync(dbFolder)) {
+    fs.mkdirSync(dbFolder);
+}
+const dbPath = path.join(dbFolder, 'docs_tickets.db');
+
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) console.error('Error conectando a SQLite:', err);
+    else console.log('✅ Base de datos conectada en .data/docs_tickets.db');
 });
 
-async function initDB() {
-    await pool.query(`
+db.serialize(() => {
+    db.run(`
         CREATE TABLE IF NOT EXISTS tickets (
-            id SERIAL PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             uuid TEXT,
             name TEXT,
             email TEXT,
@@ -55,21 +60,43 @@ async function initDB() {
             total_bs TEXT,
             photo_path TEXT,
             status TEXT DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
-    await pool.query(`
+    db.run(`
         CREATE TABLE IF NOT EXISTS qr_codes (
-            id SERIAL PRIMARY KEY,
-            ticket_id INTEGER REFERENCES tickets(id),
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER,
             uuid TEXT,
             status TEXT DEFAULT 'approved',
-            scanned_at TIMESTAMP
+            scanned_at DATETIME,
+            FOREIGN KEY(ticket_id) REFERENCES tickets(id)
         )
     `);
-    console.log('✅ Base de datos lista');
-}
-initDB().catch(err => console.error('Error iniciando DB:', err));
+});
+
+// Función auxiliar para SQLite asíncrono
+const runQuery = (query, params = []) => new Promise((resolve, reject) => {
+    db.run(query, params, function (err) {
+        if (err) reject(err);
+        else resolve({ lastID: this.lastID, changes: this.changes });
+    });
+});
+
+const getQuery = (query, params = []) => new Promise((resolve, reject) => {
+    db.get(query, params, (err, row) => {
+        if (err) reject(err);
+        else resolve(row);
+    });
+});
+
+const allQuery = (query, params = []) => new Promise((resolve, reject) => {
+    db.all(query, params, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+    });
+});
+
 
 // =========================================
 // CONFIGURAR TELEGRAM BOT
@@ -79,11 +106,17 @@ const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 let bot;
 
 if (token && adminChatId) {
-    const RENDER_URL = process.env.RENDER_EXTERNAL_URL || 'https://docs-dlvkb.onrender.com';
     bot = new TelegramBot(token, { polling: false });
 
-    // Registrar webhook con Telegram (esto despertará a Render cuando llegue un mensaje)
-    bot.setWebHook(`${RENDER_URL}/telegram-webhook`);
+    // En Glitch, process.env.PROJECT_DOMAIN contiene el nombre del proyecto.
+    const GLITCH_URL = process.env.PROJECT_DOMAIN 
+        ? `https://${process.env.PROJECT_DOMAIN}.glitch.me` 
+        : (process.env.RENDER_EXTERNAL_URL || 'https://docs-dlvkb.onrender.com');
+
+    // Registrar webhook con Telegram
+    bot.setWebHook(`${GLITCH_URL}/telegram-webhook`).then(() => {
+        console.log(`Webhook registrado en ${GLITCH_URL}/telegram-webhook`);
+    }).catch(console.error);
 
     // Ruta de Express para recibir las actualizaciones de Telegram
     app.post('/telegram-webhook', (req, res) => {
@@ -129,7 +162,7 @@ if (token && adminChatId) {
         if (chatId.toString() !== adminChatId.toString()) return;
 
         try {
-            const { rows } = await pool.query(`SELECT name, cedula, email, phone, bank, ticket_count FROM tickets WHERE status = 'approved'`);
+            const rows = await allQuery(`SELECT name, cedula, email, phone, bank, ticket_count FROM tickets WHERE status = 'approved'`);
 
             if (rows.length === 0) return bot.sendMessage(chatId, "⚠️ Aún no hay pagos aprobados.");
 
@@ -153,7 +186,7 @@ if (token && adminChatId) {
         if (chatId.toString() !== adminChatId.toString()) return;
 
         try {
-            const { rows } = await pool.query(`
+            const rows = await allQuery(`
                 SELECT t.name, t.cedula, q.scanned_at
                 FROM qr_codes q
                 JOIN tickets t ON q.ticket_id = t.id
@@ -204,11 +237,11 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
         const photoMimeType = req.file.mimetype;
         const photoPath = `data:${photoMimeType};base64,${photoBase64}`;
 
-        const result = await pool.query(
-            `INSERT INTO tickets (name, email, cedula, phone, bank, ref, ticket_count, total_bs, photo_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+        const result = await runQuery(
+            `INSERT INTO tickets (name, email, cedula, phone, bank, ref, ticket_count, total_bs, photo_path) VALUES (?,?,?,?,?,?,?,?,?)`,
             [name, email, cedula, phone, bank, ref, ticketCount, totalBs, photoPath]
         );
-        const insertId = result.rows[0].id;
+        const insertId = result.lastID;
 
         if (bot && adminChatId) {
             const caption = `🚨 *NUEVO PAGO RECIBIDO* 🚨\n\n` +
@@ -246,12 +279,11 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
 
 async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
     try {
-        const { rows } = await pool.query(`SELECT * FROM tickets WHERE id = $1`, [id]);
-        const row = rows[0];
+        const row = await getQuery(`SELECT * FROM tickets WHERE id = ?`, [id]);
         if (!row) return bot.sendMessage(chatId, "Error encontrando el ticket.");
         if (row.status !== 'pending') return bot.answerCallbackQuery(callbackQueryId, { text: "Este pago ya fue procesado." }).catch(console.error);
 
-        await pool.query(`UPDATE tickets SET status = 'approved' WHERE id = $1`, [id]);
+        await runQuery(`UPDATE tickets SET status = 'approved' WHERE id = ?`, [id]);
 
         bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n✅ *APROBADO*`, {
             chat_id: chatId, message_id: messageId,
@@ -265,7 +297,7 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
 
         for (let i = 0; i < ticketCount; i++) {
             const ticketUuid = uuidv4();
-            await pool.query(`INSERT INTO qr_codes (ticket_id, uuid) VALUES ($1, $2)`, [id, ticketUuid]);
+            await runQuery(`INSERT INTO qr_codes (ticket_id, uuid) VALUES (?, ?)`, [id, ticketUuid]);
 
             const qrDataUrl = await QRCode.toDataURL(ticketUuid, { color: { dark: '#000000', light: '#FFFFFF' } });
             const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
@@ -301,12 +333,11 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
 
 async function handleReject(id, chatId, messageId, caption, callbackQueryId) {
     try {
-        const { rows } = await pool.query(`SELECT * FROM tickets WHERE id = $1`, [id]);
-        const row = rows[0];
+        const row = await getQuery(`SELECT * FROM tickets WHERE id = ?`, [id]);
         if (!row) return bot.sendMessage(chatId, "Error encontrando el ticket.");
         if (row.status !== 'pending') return bot.answerCallbackQuery(callbackQueryId, { text: "Este pago ya fue procesado." }).catch(console.error);
 
-        await pool.query(`UPDATE tickets SET status = 'rejected' WHERE id = $1`, [id]);
+        await runQuery(`UPDATE tickets SET status = 'rejected' WHERE id = ?`, [id]);
         bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n❌ *RECHAZADO*`, {
             chat_id: chatId, message_id: messageId,
             parse_mode: 'Markdown', reply_markup: { inline_keyboard: [] }
@@ -325,7 +356,7 @@ async function handleCloseList(type, chatId, messageId, callbackQueryId) {
     }
     if (type === 'confirm') {
         try {
-            const { rows } = await pool.query(`SELECT name, cedula, email, phone, bank, ticket_count FROM tickets WHERE status = 'approved'`);
+            const rows = await allQuery(`SELECT name, cedula, email, phone, bank, ticket_count FROM tickets WHERE status = 'approved'`);
 
             let csv = '\uFEFFNombre y Apellido,Cedula,Correo,Telefono,Banco,Numero de Entradas\n';
             rows.forEach(r => {
@@ -337,8 +368,8 @@ async function handleCloseList(type, chatId, messageId, callbackQueryId) {
             const buf = Buffer.from(csv, 'utf8');
             await bot.sendDocument(chatId, buf, { caption: "📦 Respaldo final del evento." }, { filename: 'respaldo_cierre_lista.csv', contentType: 'text/csv' });
 
-            await pool.query(`UPDATE tickets SET status = 'archived' WHERE status != 'archived'`);
-            await pool.query(`UPDATE qr_codes SET status = 'archived' WHERE status != 'archived'`);
+            await runQuery(`UPDATE tickets SET status = 'archived' WHERE status != 'archived'`);
+            await runQuery(`UPDATE qr_codes SET status = 'archived' WHERE status != 'archived'`);
 
             bot.sendMessage(chatId, "✅ *La lista ha sido cerrada exitosamente.*\nLos QRs antiguos ya no funcionarán. ¡Listo para el próximo evento!", { parse_mode: 'Markdown' });
             bot.answerCallbackQuery(callbackQueryId);
@@ -358,20 +389,19 @@ app.post('/api/verify', async (req, res) => {
     if (!uuid) return res.status(400).json({ valid: false, message: 'No se proveyó código QR' });
 
     try {
-        const { rows } = await pool.query(`
+        const row = await getQuery(`
             SELECT qr_codes.*, tickets.name, tickets.ticket_count
             FROM qr_codes
             JOIN tickets ON qr_codes.ticket_id = tickets.id
-            WHERE qr_codes.uuid = $1
+            WHERE qr_codes.uuid = ?
         `, [uuid]);
 
-        const row = rows[0];
         if (!row) return res.json({ valid: false, status: 'invalid', message: '❌ ENTRADA INVÁLIDA (No existe)' });
 
         if (row.status === 'used') return res.json({ valid: false, status: 'used', message: `❌ ENTRADA YA USADA\nNombre: ${row.name}` });
 
         if (row.status === 'approved') {
-            await pool.query(`UPDATE qr_codes SET status = 'used', scanned_at = CURRENT_TIMESTAMP WHERE id = $1`, [row.id]);
+            await runQuery(`UPDATE qr_codes SET status = 'used', scanned_at = CURRENT_TIMESTAMP WHERE id = ?`, [row.id]);
             return res.json({ valid: true, status: 'success', message: `✅ ACCESO PERMITIDO\nNombre: ${row.name}\nEntrada válida para 1 persona.` });
         }
 
