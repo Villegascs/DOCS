@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Enviar al Backend (Render)
-                const response = await fetch('https://docs-dlvkb.onrender.com/api/tickets/request', {
+                const response = await fetch('https://docs-events-backend-production.up.railway.app/api/tickets/request', {
                     method: 'POST',
                     body: formData
                 });

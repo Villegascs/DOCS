@@ -108,14 +108,14 @@ let bot;
 if (token && adminChatId) {
     bot = new TelegramBot(token, { polling: false });
 
-    // En Glitch, process.env.PROJECT_DOMAIN contiene el nombre del proyecto.
-    const GLITCH_URL = process.env.PROJECT_DOMAIN 
-        ? `https://${process.env.PROJECT_DOMAIN}.glitch.me` 
-        : (process.env.RENDER_EXTERNAL_URL || 'https://docs-dlvkb.onrender.com');
+    // En Railway, usamos RAILWAY_PUBLIC_DOMAIN que es la variable de entorno automática del dominio público.
+    const RAILWAY_URL = process.env.RAILWAY_PUBLIC_DOMAIN 
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` 
+        : 'https://docs-events-backend-production.up.railway.app';
 
     // Registrar webhook con Telegram
-    bot.setWebHook(`${GLITCH_URL}/telegram-webhook`).then(() => {
-        console.log(`Webhook registrado en ${GLITCH_URL}/telegram-webhook`);
+    bot.setWebHook(`${RAILWAY_URL}/telegram-webhook`).then(() => {
+        console.log(`Webhook registrado en ${RAILWAY_URL}/telegram-webhook`);
     }).catch(console.error);
 
     // Ruta de Express para recibir las actualizaciones de Telegram
