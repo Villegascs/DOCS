@@ -230,6 +230,19 @@
                 </div>
                 <button type="submit" class="btn-primary full-width">Enviar Verificación</button>
             </form>
+
+            <!-- Success Message (Hidden by default) -->
+            <div id="successMessage" class="success-message" style="display: none; text-align: center; padding: 2rem 0;">
+                <div class="check-animation">
+                    <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                        <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                </div>
+                <h3 style="margin-top: 1rem; color: #E0FF00;">¡Pago Enviado!</h3>
+                <p style="margin-top: 1rem; color: var(--text-secondary);">En breves momentos será verificado y las entradas llegarán a tu correo electrónico.</p>
+                <button type="button" class="btn-primary" style="margin-top: 2rem;" onclick="closePaymentModal()">Cerrar</button>
+            </div>
         </div>
     </div>
 

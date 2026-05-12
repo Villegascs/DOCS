@@ -119,8 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('receipt', fileInput.files[0]);
                 }
 
-                // Enviar al Backend (puerto 3000)
-                const response = await fetch('https://docs-dlvkb.onrender.com/api/tickets/request', {
+                // Enviar al Backend (puerto 3000 o tunnel)
+                const response = await fetch('https://upgrades-mention-symptoms-tablet.trycloudflare.com/api/tickets/request', {
                     method: 'POST',
                     body: formData
                 });
@@ -128,9 +128,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
 
                 if (response.ok) {
-                    alert('¡Comprobante enviado! En breve verificaremos tu pago y recibirás tu entrada en tu correo.');
+                    // Ocultar formulario y titulo, mostrar mensaje de exito
+                    paymentForm.style.display = 'none';
+                    document.querySelector('.modal-content h2').style.display = 'none';
+                    document.querySelector('.modal-content > p').style.display = 'none';
+                    document.querySelector('.payment-info').style.display = 'none';
+                    
+                    document.getElementById('successMessage').style.display = 'block';
+                    
                     paymentForm.reset();
-                    closePaymentModal();
                 } else {
                     alert('Error: ' + (result.error || 'No se pudo enviar la verificación.'));
                 }
@@ -194,6 +200,19 @@ function closePaymentModal() {
     const modal = document.getElementById('paymentModal');
     modal.classList.remove('active');
     document.body.style.overflow = ''; // Restore scrolling
+    
+    // Reset displays for next time
+    const paymentForm = document.getElementById('paymentForm');
+    const successMsg = document.getElementById('successMessage');
+    if (paymentForm && successMsg) {
+        setTimeout(() => {
+            paymentForm.style.display = 'flex';
+            document.querySelector('.modal-content h2').style.display = 'block';
+            document.querySelector('.modal-content > p').style.display = 'block';
+            document.querySelector('.payment-info').style.display = 'grid';
+            successMsg.style.display = 'none';
+        }, 300); // Wait for modal fade out
+    }
 }
 
 // Close modal when clicking outside the content
