@@ -67,7 +67,7 @@ async function initDB() {
             scanned_at TIMESTAMP
         )
     `);
-    console.log('Ô£à Base de datos lista');
+    console.log('✅ Base de datos lista');
 }
 initDB().catch(err => console.error('Error iniciando DB:', err));
 
@@ -112,12 +112,12 @@ if (token && adminChatId) {
         const chatId = msg.chat.id;
         if (chatId.toString() !== adminChatId.toString()) return;
 
-        bot.sendMessage(chatId, "ÔÜá´©Å *ATENCI├ôN: CERRAR LISTA* ÔÜá´©Å\n\n┬┐Est├ís seguro de que deseas cerrar la lista actual? Esto archivar├í todos los pagos y *desactivar├í todos los QRs* emitidos hasta ahora.\n\nSe te enviar├í un archivo Excel de respaldo final antes de cerrar.", {
+        bot.sendMessage(chatId, "⚠️ *ATENCIÓN: CERRAR LISTA* ⚠️\n\n¿Estás seguro de que deseas cerrar la lista actual? Esto archivará todos los pagos y *desactivará todos los QRs* emitidos hasta ahora.\n\nSe te enviará un archivo Excel de respaldo final antes de cerrar.", {
             parse_mode: 'Markdown',
             reply_markup: {
                 inline_keyboard: [[
-                    { text: 'ÔÜá´©Å S├ì, CERRAR LISTA', callback_data: 'closelist_confirm' },
-                    { text: 'ÔØî Cancelar', callback_data: 'closelist_cancel' }
+                    { text: '⚠️ SÍ, CERRAR LISTA', callback_data: 'closelist_confirm' },
+                    { text: '❌ Cancelar', callback_data: 'closelist_cancel' }
                 ]]
             }
         });
@@ -131,7 +131,7 @@ if (token && adminChatId) {
         try {
             const { rows } = await pool.query(`SELECT name, cedula, email, phone, bank, ticket_count FROM tickets WHERE status = 'approved'`);
 
-            if (rows.length === 0) return bot.sendMessage(chatId, "ÔÜá´©Å A├║n no hay pagos aprobados.");
+            if (rows.length === 0) return bot.sendMessage(chatId, "⚠️ Aún no hay pagos aprobados.");
 
             let csv = '\uFEFFNombre y Apellido,Cedula,Correo,Telefono,Banco,Numero de Entradas\n';
             rows.forEach(r => {
@@ -139,11 +139,11 @@ if (token && adminChatId) {
             });
 
             const buf = Buffer.from(csv, 'utf8');
-            bot.sendDocument(chatId, buf, { caption: '­ƒôè Historial de pagos aprobados.' }, { filename: 'aprobados.csv', contentType: 'text/csv' })
-               .catch(() => bot.sendMessage(chatId, 'ÔØî Error al enviar el archivo.'));
+            bot.sendDocument(chatId, buf, { caption: '📊 Historial de pagos aprobados.' }, { filename: 'aprobados.csv', contentType: 'text/csv' })
+               .catch(() => bot.sendMessage(chatId, '❌ Error al enviar el archivo.'));
         } catch (e) {
             console.error(e);
-            bot.sendMessage(chatId, 'ÔØî Error generando el historial.');
+            bot.sendMessage(chatId, '❌ Error generando el historial.');
         }
     });
 
@@ -160,7 +160,7 @@ if (token && adminChatId) {
                 WHERE q.status = 'used'
             `);
 
-            if (rows.length === 0) return bot.sendMessage(chatId, "ÔÜá´©Å A├║n no hay ninguna entrada escaneada.");
+            if (rows.length === 0) return bot.sendMessage(chatId, "⚠️ Aún no hay ninguna entrada escaneada.");
 
             let csv = '\uFEFFNombre y Apellido,Cedula,Hora de Ingreso\n';
             rows.forEach(r => {
@@ -172,16 +172,16 @@ if (token && adminChatId) {
             });
 
             const buf = Buffer.from(csv, 'utf8');
-            bot.sendDocument(chatId, buf, { caption: '­ƒÄƒ´©Å Reporte de asistencias (entradas escaneadas).' }, { filename: 'asistencias.csv', contentType: 'text/csv' })
-               .catch(() => bot.sendMessage(chatId, 'ÔØî Error al enviar el archivo.'));
+            bot.sendDocument(chatId, buf, { caption: '🎟️ Reporte de asistencias (entradas escaneadas).' }, { filename: 'asistencias.csv', contentType: 'text/csv' })
+               .catch(() => bot.sendMessage(chatId, '❌ Error al enviar el archivo.'));
         } catch (e) {
             console.error(e);
-            bot.sendMessage(chatId, 'ÔØî Error generando asistencias.');
+            bot.sendMessage(chatId, '❌ Error generando asistencias.');
         }
     });
 
 } else {
-    console.warn("ÔÜá´©Å TELEGRAM_BOT_TOKEN o ADMIN_CHAT_ID no configurados.");
+    console.warn("⚠️ TELEGRAM_BOT_TOKEN o ADMIN_CHAT_ID no configurados.");
 }
 
 // Configurar Nodemailer
@@ -211,14 +211,14 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
         const insertId = result.rows[0].id;
 
         if (bot && adminChatId) {
-            const caption = `­ƒÜ¿ *NUEVO PAGO RECIBIDO* ­ƒÜ¿\n\n` +
-                `­ƒæñ *Nombre*: ${name}\n` +
-                `­ƒôº *Email*: ${email}\n` +
-                `­ƒåö *C├®dula*: ${cedula}\n` +
-                `­ƒô▒ *Tel├®fono*: ${phone}\n` +
-                `­ƒÄƒ *Entradas*: ${ticketCount}\n` +
-                `­ƒÆ░ *Total Bs*: ${totalBs}\n` +
-                `­ƒÅª *Banco*: ${bank} (Ref: ${ref})`;
+            const caption = `🚨 *NUEVO PAGO RECIBIDO* 🚨\n\n` +
+                `👤 *Nombre*: ${name}\n` +
+                `📧 *Email*: ${email}\n` +
+                `🆔 *Cédula*: ${cedula}\n` +
+                `📱 *Teléfono*: ${phone}\n` +
+                `🎟 *Entradas*: ${ticketCount}\n` +
+                `💰 *Total Bs*: ${totalBs}\n` +
+                `🏦 *Banco*: ${bank} (Ref: ${ref})`;
 
             const photoBuffer = Buffer.from(photoBase64, 'base64');
             bot.sendPhoto(adminChatId, photoBuffer, {
@@ -226,14 +226,14 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: 'Ô£à Aprobar y Enviar', callback_data: `approve_${insertId}` },
-                        { text: 'ÔØî Rechazar', callback_data: `reject_${insertId}` }
+                        { text: '✅ Aprobar y Enviar', callback_data: `approve_${insertId}` },
+                        { text: '❌ Rechazar', callback_data: `reject_${insertId}` }
                     ]]
                 }
             }, { filename: 'comprobante.jpg', contentType: photoMimeType }).catch(e => console.error("Error Telegram:", e));
         }
 
-        res.json({ success: true, message: 'Pago registrado. Esperando verificaci├│n.' });
+        res.json({ success: true, message: 'Pago registrado. Esperando verificación.' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error del servidor' });
@@ -241,7 +241,7 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
 });
 
 // =========================================
-// L├ôGICA DEL BOT
+// LÓGICA DEL BOT
 // =========================================
 
 async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
@@ -253,7 +253,7 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
 
         await pool.query(`UPDATE tickets SET status = 'approved' WHERE id = $1`, [id]);
 
-        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\nÔ£à *APROBADO*`, {
+        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n✅ *APROBADO*`, {
             chat_id: chatId, message_id: messageId,
             parse_mode: 'Markdown', reply_markup: { inline_keyboard: [] }
         });
@@ -280,11 +280,11 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             subject: 'Tus Entradas para DOCS Vol. 1',
             html: `<div style="background:#050505;color:white;padding:40px;font-family:sans-serif;text-align:center;">
                 <h1 style="color:#FFFFFF;letter-spacing:2px;">DOCS</h1>
-                <h2>┬íPago Verificado!</h2>
-                <p>Hola ${row.name}, tu pago de ${row.total_bs} ha sido verificado con ├®xito.</p>
-                <p>Aqu├¡ tienes tus c├│digos QR. <strong>Cada QR es v├ílido para 1 persona.</strong></p>
+                <h2>¡Pago Verificado!</h2>
+                <p>Hola ${row.name}, tu pago de ${row.total_bs} ha sido verificado con éxito.</p>
+                <p>Aquí tienes tus códigos QR. <strong>Cada QR es válido para 1 persona.</strong></p>
                 ${qrHtml}
-                <p style="color:#A0A0A0;margin-top:30px;">No compartas estos c├│digos. Ser├ín escaneados individualmente en la puerta.</p>
+                <p style="color:#A0A0A0;margin-top:30px;">No compartas estos códigos. Serán escaneados individualmente en la puerta.</p>
             </div>`,
             attachments
         };
@@ -307,7 +307,7 @@ async function handleReject(id, chatId, messageId, caption, callbackQueryId) {
         if (row.status !== 'pending') return bot.answerCallbackQuery(callbackQueryId, { text: "Este pago ya fue procesado." }).catch(console.error);
 
         await pool.query(`UPDATE tickets SET status = 'rejected' WHERE id = $1`, [id]);
-        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\nÔØî *RECHAZADO*`, {
+        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n❌ *RECHAZADO*`, {
             chat_id: chatId, message_id: messageId,
             parse_mode: 'Markdown', reply_markup: { inline_keyboard: [] }
         });
@@ -332,30 +332,30 @@ async function handleCloseList(type, chatId, messageId, callbackQueryId) {
                 csv += `"${(r.name||'').replace(/"/g,'""')}","${r.cedula}","${(r.email||'').replace(/"/g,'""')}","${r.phone}","${(r.bank||'').replace(/"/g,'""')}",${r.ticket_count}\n`;
             });
 
-            bot.editMessageText("ÔÅ│ Procesando el cierre y generando respaldo final...", { chat_id: chatId, message_id: messageId });
+            bot.editMessageText("⏳ Procesando el cierre y generando respaldo final...", { chat_id: chatId, message_id: messageId });
 
             const buf = Buffer.from(csv, 'utf8');
-            await bot.sendDocument(chatId, buf, { caption: "­ƒôª Respaldo final del evento." }, { filename: 'respaldo_cierre_lista.csv', contentType: 'text/csv' });
+            await bot.sendDocument(chatId, buf, { caption: "📦 Respaldo final del evento." }, { filename: 'respaldo_cierre_lista.csv', contentType: 'text/csv' });
 
             await pool.query(`UPDATE tickets SET status = 'archived' WHERE status != 'archived'`);
             await pool.query(`UPDATE qr_codes SET status = 'archived' WHERE status != 'archived'`);
 
-            bot.sendMessage(chatId, "Ô£à *La lista ha sido cerrada exitosamente.*\nLos QRs antiguos ya no funcionar├ín. ┬íListo para el pr├│ximo evento!", { parse_mode: 'Markdown' });
+            bot.sendMessage(chatId, "✅ *La lista ha sido cerrada exitosamente.*\nLos QRs antiguos ya no funcionarán. ¡Listo para el próximo evento!", { parse_mode: 'Markdown' });
             bot.answerCallbackQuery(callbackQueryId);
         } catch (e) {
             console.error("Error cerrando lista:", e);
-            bot.sendMessage(chatId, "ÔØî Error al cerrar la lista.");
+            bot.sendMessage(chatId, "❌ Error al cerrar la lista.");
             bot.answerCallbackQuery(callbackQueryId);
         }
     }
 }
 
 // =========================================
-// RUTA DEL ESC├üNER
+// RUTA DEL ESCÁNER
 // =========================================
 app.post('/api/verify', async (req, res) => {
     const { uuid } = req.body;
-    if (!uuid) return res.status(400).json({ valid: false, message: 'No se provey├│ c├│digo QR' });
+    if (!uuid) return res.status(400).json({ valid: false, message: 'No se proveyó código QR' });
 
     try {
         const { rows } = await pool.query(`
@@ -366,16 +366,16 @@ app.post('/api/verify', async (req, res) => {
         `, [uuid]);
 
         const row = rows[0];
-        if (!row) return res.json({ valid: false, status: 'invalid', message: 'ÔØî ENTRADA INV├üLIDA (No existe)' });
+        if (!row) return res.json({ valid: false, status: 'invalid', message: '❌ ENTRADA INVÁLIDA (No existe)' });
 
-        if (row.status === 'used') return res.json({ valid: false, status: 'used', message: `ÔØî ENTRADA YA USADA\nNombre: ${row.name}` });
+        if (row.status === 'used') return res.json({ valid: false, status: 'used', message: `❌ ENTRADA YA USADA\nNombre: ${row.name}` });
 
         if (row.status === 'approved') {
             await pool.query(`UPDATE qr_codes SET status = 'used', scanned_at = CURRENT_TIMESTAMP WHERE id = $1`, [row.id]);
-            return res.json({ valid: true, status: 'success', message: `Ô£à ACCESO PERMITIDO\nNombre: ${row.name}\nEntrada v├ílida para 1 persona.` });
+            return res.json({ valid: true, status: 'success', message: `✅ ACCESO PERMITIDO\nNombre: ${row.name}\nEntrada válida para 1 persona.` });
         }
 
-        return res.json({ valid: false, status: 'invalid', message: 'ÔØî ENTRADA NO APROBADA' });
+        return res.json({ valid: false, status: 'invalid', message: '❌ ENTRADA NO APROBADA' });
     } catch (e) {
         console.error(e);
         res.status(500).json({ valid: false, message: 'Error del servidor' });
@@ -384,5 +384,5 @@ app.post('/api/verify', async (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, () => {
-    console.log(`­ƒÜÇ DOCS Backend corriendo en el puerto ${PORT}`);
+    console.log(`🚀 DOCS Backend corriendo en el puerto ${PORT}`);
 });
