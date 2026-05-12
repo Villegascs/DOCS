@@ -119,8 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('receipt', fileInput.files[0]);
                 }
 
-                // Enviar al Backend (puerto 3000 o tunnel)
-                const response = await fetch('https://upgrades-mention-symptoms-tablet.trycloudflare.com/api/tickets/request', {
+                // Enviar al Backend (Render)
+                const response = await fetch('https://docs-dlvkb.onrender.com/api/tickets/request', {
                     method: 'POST',
                     body: formData
                 });
