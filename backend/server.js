@@ -103,10 +103,10 @@ const allQuery = (query, params = []) => new Promise((resolve, reject) => {
 // CONFIGURAR TELEGRAM BOT
 // =========================================
 const token = process.env.TELEGRAM_BOT_TOKEN;
-const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+const adminChatIds = process.env.TELEGRAM_ADMIN_CHAT_ID ? process.env.TELEGRAM_ADMIN_CHAT_ID.split(',').map(id => id.trim()) : [];
 let bot;
 
-if (token && adminChatId) {
+if (token && adminChatIds.length > 0) {
     bot = new TelegramBot(token, { polling: false });
 
     // En Railway, usamos RAILWAY_PUBLIC_DOMAIN que es la variable de entorno automática del dominio público.
@@ -144,7 +144,7 @@ if (token && adminChatId) {
     // Comando /cerrar_lista
     bot.onText(/\/cerrar_lista/, (msg) => {
         const chatId = msg.chat.id;
-        if (chatId.toString() !== adminChatId.toString()) return;
+        if (!adminChatIds.includes(chatId.toString())) return;
 
         bot.sendMessage(chatId, "⚠️ *ATENCIÓN: CERRAR LISTA* ⚠️\n\n¿Estás seguro de que deseas cerrar la lista actual? Esto archivará todos los pagos y *desactivará todos los QRs* emitidos hasta ahora.\n\nSe te enviará un archivo Excel de respaldo final antes de cerrar.", {
             parse_mode: 'Markdown',
@@ -160,7 +160,7 @@ if (token && adminChatId) {
     // Comando /historial
     bot.onText(/\/historial/, async (msg) => {
         const chatId = msg.chat.id;
-        if (chatId.toString() !== adminChatId.toString()) return;
+        if (!adminChatIds.includes(chatId.toString())) return;
 
         try {
             const rows = await allQuery(`SELECT name, cedula, email, phone, bank, ticket_count FROM tickets WHERE status = 'approved'`);
@@ -184,7 +184,7 @@ if (token && adminChatId) {
     // Comando /asistencias
     bot.onText(/\/asistencias/, async (msg) => {
         const chatId = msg.chat.id;
-        if (chatId.toString() !== adminChatId.toString()) return;
+        if (!adminChatIds.includes(chatId.toString())) return;
 
         try {
             const rows = await allQuery(`
@@ -244,7 +244,7 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
         );
         const insertId = result.lastID;
 
-        if (bot && adminChatId) {
+        if (bot && adminChatIds.length > 0) {
             const caption = `🚨 *NUEVO PAGO RECIBIDO* 🚨\n\n` +
                 `👤 *Nombre*: ${name}\n` +
                 `📧 *Email*: ${email}\n` +
@@ -255,16 +255,18 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
                 `🏦 *Banco*: ${bank} (Ref: ${ref})`;
 
             const photoBuffer = Buffer.from(photoBase64, 'base64');
-            bot.sendPhoto(adminChatId, photoBuffer, {
-                caption,
-                parse_mode: 'Markdown',
-                reply_markup: {
-                    inline_keyboard: [[
-                        { text: '✅ Aprobar y Enviar', callback_data: `approve_${insertId}` },
-                        { text: '❌ Rechazar', callback_data: `reject_${insertId}` }
-                    ]]
-                }
-            }, { filename: 'comprobante.jpg', contentType: photoMimeType }).catch(e => console.error("Error Telegram:", e));
+            adminChatIds.forEach(chatId => {
+                bot.sendPhoto(chatId, photoBuffer, {
+                    caption,
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [[
+                            { text: '✅ Aprobar y Enviar', callback_data: `approve_${insertId}` },
+                            { text: '❌ Rechazar', callback_data: `reject_${insertId}` }
+                        ]]
+                    }
+                }, { filename: 'comprobante.jpg', contentType: photoMimeType }).catch(e => console.error(`Error Telegram enviando a ${chatId}:`, e));
+            });
         }
 
         res.json({ success: true, message: 'Pago registrado. Esperando verificación.' });
