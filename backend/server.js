@@ -337,7 +337,7 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
         const mailOptions = {
             from: `"DOCS Underground" <${process.env.EMAIL_USER}>`,
             to: row.email,
-            subject: 'Tus Entradas para DOCS Vol. 1',
+            subject: 'Tus Entradas',
             html: `<div style="background:#050505;color:white;padding:40px;font-family:sans-serif;text-align:center;">
                 <img src="https://docsevents.web.app/Logos/docs%20png.png" style="max-height:80px;margin-bottom:20px;" alt="DOCS">
                 <h2>¡Pago Verificado!</h2>
