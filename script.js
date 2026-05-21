@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('https://ve.dolarapi.com/v1/euros/oficial');
             const data = await response.json();
             if (data && data.promedio) {
-                currentRateEUR = data.promedio;
+                currentRateEUR = Math.round(data.promedio * 100) / 100;
                 updateTotal();
             } else {
                 if (montoBsElement) montoBsElement.innerText = "Error al cargar tasa (Consultar en IG)";
