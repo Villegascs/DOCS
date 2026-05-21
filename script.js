@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Navbar Scroll Effect
     const navbar = document.getElementById('navbar');
-    
+
     window.addEventListener('scroll', () => {
         if (window.scrollY > 50) {
             navbar.classList.add('scrolled');
@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Mobile Menu Toggle
     const mobileBtn = document.querySelector('.mobile-menu-btn');
     const navLinks = document.querySelector('.nav-links');
-    
-    if(mobileBtn) {
+
+    if (mobileBtn) {
         mobileBtn.addEventListener('click', () => {
             // Aquí podríamos agregar una clase 'active' para mostrar el menú en móvil
             // Por simplicidad, togglamos un estilo inline o clase
@@ -35,23 +35,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
-            
+
             const targetId = this.getAttribute('href');
-            if(targetId === '#') return;
-            
+            if (targetId === '#') return;
+
             const targetElement = document.querySelector(targetId);
-            if(targetElement) {
+            if (targetElement) {
                 // Adjust for navbar height
                 const navHeight = navbar.offsetHeight;
                 const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset - navHeight;
-                
+
                 window.scrollTo({
                     top: targetPosition,
                     behavior: 'smooth'
                 });
-                
+
                 // Hide mobile menu if open
-                if(window.innerWidth <= 900 && navLinks.style.display === 'flex') {
+                if (window.innerWidth <= 900 && navLinks.style.display === 'flex') {
                     navLinks.style.display = 'none';
                 }
             }
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const currentId = entry.target.getAttribute('id');
-                
+
                 navItems.forEach(link => {
                     link.classList.remove('active');
                     if (link.getAttribute('href') === `#${currentId}`) {
@@ -88,13 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Form Submission Handling (Conexión al Backend Node.js)
     const paymentForm = document.getElementById('paymentForm');
-    if(paymentForm) {
+    if (paymentForm) {
         paymentForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const submitBtn = paymentForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerText;
-            
+
             submitBtn.innerText = 'Enviando Verificación...';
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.7';
@@ -109,11 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('bank', document.getElementById('bank').value);
                 formData.append('ref', document.getElementById('ref').value);
                 formData.append('ticketCount', document.getElementById('ticketCount').value);
-                
+
                 // Extraer el total en Bs sin el texto html adicional
                 const totalBsText = document.getElementById('monto-bs').innerText.split('(')[0].trim();
                 formData.append('totalBs', totalBsText);
-                
+
                 const fileInput = document.getElementById('receipt');
                 if (fileInput.files.length > 0) {
                     formData.append('receipt', fileInput.files[0]);
@@ -133,9 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.querySelector('.modal-content h2').style.display = 'none';
                     document.querySelector('.modal-content > p').style.display = 'none';
                     document.querySelector('.payment-info').style.display = 'none';
-                    
+
                     document.getElementById('successMessage').style.display = 'block';
-                    
+
                     paymentForm.reset();
                 } else {
                     alert('Error: ' + (result.error || 'No se pudo enviar la verificación.'));
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. Fetch BCV Rate (EUR)
     const montoBsElement = document.getElementById('monto-bs');
     const ticketCountInput = document.getElementById('ticketCount');
-    const ticketPriceEUR = 15;
+    const ticketPriceEUR = 3;
     let currentRateEUR = 0;
 
     async function fetchBCVRate() {
@@ -165,11 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRateEUR = data.promedio;
                 updateTotal();
             } else {
-                if(montoBsElement) montoBsElement.innerText = "Error al cargar tasa (Consultar en IG)";
+                if (montoBsElement) montoBsElement.innerText = "Error al cargar tasa (Consultar en IG)";
             }
         } catch (error) {
             console.error('Error fetching BCV rate:', error);
-            if(montoBsElement) montoBsElement.innerText = "Error al cargar tasa (Consultar en IG)";
+            if (montoBsElement) montoBsElement.innerText = "Error al cargar tasa (Consultar en IG)";
         }
     }
 
@@ -200,7 +200,7 @@ function closePaymentModal() {
     const modal = document.getElementById('paymentModal');
     modal.classList.remove('active');
     document.body.style.overflow = ''; // Restore scrolling
-    
+
     // Reset displays for next time
     const paymentForm = document.getElementById('paymentForm');
     const successMsg = document.getElementById('successMessage');

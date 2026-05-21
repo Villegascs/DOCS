@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DÖCS | Eventos</title>
-    <link rel="icon" type="image/png" href="Logos/docs%20png.png">
+    <link rel="icon" type="image/jpeg" href="Logos/photo_2026-05-21_16-38-27.jpg">
     <meta name="description"
         content="DOCS - La experiencia definitiva en fiestas electrónicas underground. Compra tus entradas, escucha nuestros sets y sé parte de la comunidad.">
     <!-- Google Fonts -->
@@ -46,7 +46,7 @@
         <div class="hero-overlay"></div>
         <img src="Multimedia/Proyecto%20Convertir%20a%20GIF%20(1)%20(1).gif" alt="DOCS Background" class="hero-video">
         <div class="hero-content">
-            <div class="hero-badge">Próximo Evento: 23 de Abril</div>
+            <div class="hero-badge">Próximo Evento: 23 de Mayo</div>
             <h1 class="hero-title">
                 <span>WITHOUT MUSIC,</span>
                 <span class="highlight">LIFE WOULD BE A MISTAKE.</span>
@@ -70,14 +70,14 @@
                         <img src="Multimedia/IMG_0724.PNG" alt="REDROOM Event">
                         <div class="event-date">
                             <span class="day">23</span>
-                            <span class="month">ABR</span>
+                            <span class="month">MAY</span>
                         </div>
                     </div>
                     <div class="event-details">
-                        <h3>Vol. 2: REDROOM</h3>
-                        <p class="location">Secret Location, Merida</p>
-                        <p class="lineup">DUAL REALITY</p>
-                        <button class="btn-primary full-width" onclick="openPaymentModal()">Tickets (€15)</button>
+                        <h3>ANIVERSARIO ALAMBIQUE BAR</h3>
+                        <p class="location">Alambique Bar, Merida</p>
+                        <p class="lineup">DUAL REALITY, AURA, NOCTO, WAIQUE</p>
+                        <button class="btn-primary full-width" onclick="openPaymentModal()">Tickets (€3)</button>
                     </div>
                 </div>
                 <!-- Event Card 2 -->
@@ -91,8 +91,8 @@
                         </div>
                     </div>
                     <div class="event-details">
-                        <h3>Vol. 1: Sesion One</h3>
-                        <p class="location">La Ormiga</p>
+                        <h3>Session One</h3>
+                        <p class="location">La Hormiga</p>
                         <p class="lineup">Lineup: WAIQUE, DUAL REALITY, TOMY (VE), CLAUDIO Z, FOFY, NOCTO</p>
                         <button class="btn-secondary full-width" disabled>Sold Out</button>
                     </div>
@@ -142,7 +142,7 @@
         <div class="modal-content glass-panel">
             <span class="close-modal" onclick="closePaymentModal()">&times;</span>
             <h2>Verificación de <span class="highlight">Pago</span></h2>
-            <p>Para asegurar tus entradas a <strong>DOCS Vol. 1</strong> (€15 c/u), realiza el pago vía Pago Móvil o
+            <p>Para asegurar tus entradas a <strong>DOCS Vol. 1</strong> (€3 c/u), realiza el pago vía Pago Móvil o
                 Zelle y envía el comprobante.</p>
 
             <div class="payment-info">
@@ -232,16 +232,19 @@
             </form>
 
             <!-- Success Message (Hidden by default) -->
-            <div id="successMessage" class="success-message" style="display: none; text-align: center; padding: 2rem 0;">
+            <div id="successMessage" class="success-message"
+                style="display: none; text-align: center; padding: 2rem 0;">
                 <div class="check-animation">
                     <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                        <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-                        <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                        <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none" />
+                        <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
                     </svg>
                 </div>
                 <h3 style="margin-top: 1rem; color: #E0FF00;">¡Pago Enviado!</h3>
-                <p style="margin-top: 1rem; color: var(--text-secondary);">En breves momentos será verificado y las entradas llegarán a tu correo electrónico.</p>
-                <button type="button" class="btn-primary" style="margin-top: 2rem;" onclick="closePaymentModal()">Cerrar</button>
+                <p style="margin-top: 1rem; color: var(--text-secondary);">En breves momentos será verificado y las
+                    entradas llegarán a tu correo electrónico.</p>
+                <button type="button" class="btn-primary" style="margin-top: 2rem;"
+                    onclick="closePaymentModal()">Cerrar</button>
             </div>
         </div>
     </div>
