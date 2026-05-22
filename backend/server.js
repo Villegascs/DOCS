@@ -273,7 +273,6 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
             name, email, cedula, phone, bank, ref, 
             ticket_count: parseInt(ticketCount), 
             total_bs: totalBs, 
-            photo_path: photoPath,
             status: 'pending',
             created_at: admin.firestore.FieldValue.serverTimestamp()
         });
