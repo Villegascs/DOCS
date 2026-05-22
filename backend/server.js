@@ -1,13 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const sqlite3 = require('sqlite3').verbose();
+const admin = require('firebase-admin');
 const TelegramBot = require('node-telegram-bot-api');
 const nodemailer = require('nodemailer');
 const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
-const fs = require('fs');
 const Jimp = require('jimp');
 require('dotenv').config();
 
@@ -20,84 +19,36 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health check route
-app.get('/', (req, res) => res.json({ status: 'DOCS Backend OK' }));
+app.get('/', (req, res) => res.json({ status: 'DOCS Backend OK (Serverless Firebase)' }));
 
 // Configurar Multer (memoria)
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB limit
 
 // =========================================
-// CONFIGURAR BASE DE DATOS SQLITE (GLITCH PERSISTENT)
+// CONFIGURAR FIREBASE FIRESTORE
 // =========================================
-// En Glitch, la carpeta .data persiste entre reinicios.
-const dbFolder = path.join(__dirname, '.data');
-if (!fs.existsSync(dbFolder)) {
-    fs.mkdirSync(dbFolder);
+if (!admin.apps.length) {
+    try {
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+            console.log('✅ Firebase Admin Inicializado');
+        } else {
+            console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT no configurado en variables de entorno.');
+            admin.initializeApp(); // Intentar con credenciales por defecto de entorno
+        }
+    } catch (e) {
+        console.error('Error inicializando Firebase:', e);
+    }
 }
-const dbPath = path.join(dbFolder, 'docs_tickets.db');
-
-const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error('Error conectando a SQLite:', err);
-    else console.log('✅ Base de datos conectada en .data/docs_tickets.db');
-});
-
-db.serialize(() => {
-    db.run(`
-        CREATE TABLE IF NOT EXISTS tickets (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uuid TEXT,
-            name TEXT,
-            email TEXT,
-            cedula TEXT,
-            phone TEXT,
-            bank TEXT,
-            ref TEXT,
-            ticket_count INTEGER,
-            total_bs TEXT,
-            photo_path TEXT,
-            status TEXT DEFAULT 'pending',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-    db.run(`
-        CREATE TABLE IF NOT EXISTS qr_codes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ticket_id INTEGER,
-            uuid TEXT,
-            status TEXT DEFAULT 'approved',
-            scanned_at DATETIME,
-            FOREIGN KEY(ticket_id) REFERENCES tickets(id)
-        )
-    `);
-});
-
-// Función auxiliar para SQLite asíncrono
-const runQuery = (query, params = []) => new Promise((resolve, reject) => {
-    db.run(query, params, function (err) {
-        if (err) reject(err);
-        else resolve({ lastID: this.lastID, changes: this.changes });
-    });
-});
-
-const getQuery = (query, params = []) => new Promise((resolve, reject) => {
-    db.get(query, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-    });
-});
-
-const allQuery = (query, params = []) => new Promise((resolve, reject) => {
-    db.all(query, params, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-    });
-});
-
+const db = admin.firestore();
 
 // =========================================
 // CONFIGURAR TELEGRAM BOT
@@ -109,18 +60,16 @@ let bot;
 if (token && adminChatIds.length > 0) {
     bot = new TelegramBot(token, { polling: false });
 
-    // En Railway, usamos RAILWAY_PUBLIC_DOMAIN que es la variable de entorno automática del dominio público.
-    const RAILWAY_URL = process.env.RAILWAY_PUBLIC_DOMAIN 
-        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` 
-        : 'https://docs-events-backend-production.up.railway.app';
+    // En Vercel usaremos VERCEL_URL si existe, sino un default
+    const SERVER_URL = process.env.VERCEL_URL 
+        ? `https://${process.env.VERCEL_URL}` 
+        : (process.env.CUSTOM_URL || 'https://tu-app.vercel.app');
 
-    // Registrar webhook con Telegram
-    bot.setWebHook(`${RAILWAY_URL}/telegram-webhook`).then(() => {
-        console.log(`Webhook registrado en ${RAILWAY_URL}/telegram-webhook`);
-    }).catch(console.error);
+    // Registrar webhook con Telegram (se registra automáticamente al recibir un pago o arrancar local)
+    bot.setWebHook(`${SERVER_URL}/api/telegram-webhook`).catch(console.error);
 
     // Ruta de Express para recibir las actualizaciones de Telegram
-    app.post('/telegram-webhook', (req, res) => {
+    app.post('/api/telegram-webhook', (req, res) => {
         bot.processUpdate(req.body);
         res.sendStatus(200);
     });
@@ -148,7 +97,7 @@ if (token && adminChatIds.length > 0) {
         const chatId = msg.chat.id;
         if (!adminChatIds.includes(chatId.toString())) return;
 
-        bot.sendMessage(chatId, "⚠️ <b>ATENCIÓN: CERRAR LISTA</b> ⚠️\n\n¿Estás seguro de que deseas cerrar la lista actual? Esto archivará todos los pagos y <b>desactivará todos los QRs</b> emitidos hasta ahora.\n\nSe te enviará un archivo Excel de respaldo final antes de cerrar.", {
+        bot.sendMessage(chatId, "⚠️ <b>ATENCIÓN: CERRAR LISTA</b> ⚠️\n\n¿Estás seguro de que deseas cerrar la lista actual? Esto archivará todos los pagos y <b>desactivará todos los QRs</b> emitidos hasta ahora.", {
             parse_mode: 'HTML',
             reply_markup: {
                 inline_keyboard: [[
@@ -165,12 +114,12 @@ if (token && adminChatIds.length > 0) {
         if (!adminChatIds.includes(chatId.toString())) return;
 
         try {
-            const rows = await allQuery(`SELECT name, cedula, email, phone, bank, ticket_count FROM tickets WHERE status = 'approved'`);
-
-            if (rows.length === 0) return bot.sendMessage(chatId, "⚠️ Aún no hay pagos aprobados.");
+            const snapshot = await db.collection('tickets').where('status', '==', 'approved').get();
+            if (snapshot.empty) return bot.sendMessage(chatId, "⚠️ Aún no hay pagos aprobados.");
 
             let csv = '\uFEFFNombre y Apellido,Cedula,Correo,Telefono,Banco,Numero de Entradas\n';
-            rows.forEach(r => {
+            snapshot.forEach(doc => {
+                const r = doc.data();
                 csv += `"${(r.name||'').replace(/"/g,'""')}","${r.cedula}","${(r.email||'').replace(/"/g,'""')}","${r.phone}","${(r.bank||'').replace(/"/g,'""')}",${r.ticket_count}\n`;
             });
 
@@ -189,23 +138,28 @@ if (token && adminChatIds.length > 0) {
         if (!adminChatIds.includes(chatId.toString())) return;
 
         try {
-            const rows = await allQuery(`
-                SELECT t.name, t.cedula, q.scanned_at
-                FROM qr_codes q
-                JOIN tickets t ON q.ticket_id = t.id
-                WHERE q.status = 'used'
-            `);
-
-            if (rows.length === 0) return bot.sendMessage(chatId, "⚠️ Aún no hay ninguna entrada escaneada.");
+            const qrSnapshot = await db.collection('qr_codes').where('status', '==', 'used').get();
+            if (qrSnapshot.empty) return bot.sendMessage(chatId, "⚠️ Aún no hay ninguna entrada escaneada.");
 
             let csv = '\uFEFFNombre y Apellido,Cedula,Hora de Ingreso\n';
-            rows.forEach(r => {
-                let hora = 'Desconocida';
-                if (r.scanned_at) {
-                    hora = new Date(r.scanned_at).toLocaleString('es-VE', { timeZone: 'America/Caracas' });
+            
+            // Recopilar datos (puede ser lento si hay muchos, pero en Firebase es aceptable para eventos pequeños)
+            const ticketCache = {};
+            for (const qrDoc of qrSnapshot.docs) {
+                const q = qrDoc.data();
+                if (!ticketCache[q.ticket_id]) {
+                    const tDoc = await db.collection('tickets').doc(q.ticket_id).get();
+                    if (tDoc.exists) ticketCache[q.ticket_id] = tDoc.data();
                 }
-                csv += `"${(r.name||'').replace(/"/g,'""')}","${r.cedula}","${hora}"\n`;
-            });
+                const t = ticketCache[q.ticket_id] || {};
+                
+                let hora = 'Desconocida';
+                if (q.scanned_at) {
+                    const dateObj = q.scanned_at.toDate ? q.scanned_at.toDate() : new Date(q.scanned_at);
+                    hora = dateObj.toLocaleString('es-VE', { timeZone: 'America/Caracas' });
+                }
+                csv += `"${(t.name||'').replace(/"/g,'""')}","${t.cedula||''}","${hora}"\n`;
+            }
 
             const buf = Buffer.from(csv, 'utf8');
             bot.sendDocument(chatId, buf, { caption: '🎟️ Reporte de asistencias (entradas escaneadas).' }, { filename: 'asistencias.csv', contentType: 'text/csv' })
@@ -222,12 +176,15 @@ if (token && adminChatIds.length > 0) {
         if (!adminChatIds.includes(chatId.toString())) return;
 
         try {
-            const rows = await allQuery(`SELECT * FROM tickets WHERE status = 'pending'`);
-            if (rows.length === 0) return bot.sendMessage(chatId, "✅ No hay pagos pendientes.");
+            const snapshot = await db.collection('tickets').where('status', '==', 'pending').get();
+            if (snapshot.empty) return bot.sendMessage(chatId, "✅ No hay pagos pendientes.");
 
-            bot.sendMessage(chatId, `⏳ Enviando ${rows.length} pago(s) pendiente(s)...`);
+            bot.sendMessage(chatId, `⏳ Enviando ${snapshot.size} pago(s) pendiente(s)...`);
 
-            for (const row of rows) {
+            for (const doc of snapshot.docs) {
+                const row = doc.data();
+                const id = doc.id;
+                
                 const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 const caption = `🚨 <b>PAGO PENDIENTE RECUPERADO</b> 🚨\n\n` +
                     `👤 <b>Nombre</b>: ${escapeHTML(row.name)}\n` +
@@ -254,23 +211,22 @@ if (token && adminChatIds.length > 0) {
                         parse_mode: 'HTML',
                         reply_markup: {
                             inline_keyboard: [[
-                                { text: '✅ Aprobar y Enviar', callback_data: `approve_${row.id}` },
-                                { text: '❌ Rechazar', callback_data: `reject_${row.id}` }
+                                { text: '✅ Aprobar y Enviar', callback_data: `approve_${id}` },
+                                { text: '❌ Rechazar', callback_data: `reject_${id}` }
                             ]]
                         }
                     }, { filename: 'comprobante.jpg', contentType: mimeType }).catch(e => console.error(e));
                 } else {
-                    await bot.sendMessage(chatId, caption + `\n\n⚠️ <i>No se pudo recuperar la imagen del comprobante.</i>`, {
+                    await bot.sendMessage(chatId, caption + `\n\n⚠️ <i>No se pudo recuperar la imagen.</i>`, {
                         parse_mode: 'HTML',
                         reply_markup: {
                             inline_keyboard: [[
-                                { text: '✅ Aprobar y Enviar', callback_data: `approve_${row.id}` },
-                                { text: '❌ Rechazar', callback_data: `reject_${row.id}` }
+                                { text: '✅ Aprobar y Enviar', callback_data: `approve_${id}` },
+                                { text: '❌ Rechazar', callback_data: `reject_${id}` }
                             ]]
                         }
                     });
                 }
-                
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
         } catch (e) {
@@ -303,11 +259,15 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
         const photoMimeType = req.file.mimetype;
         const photoPath = `data:${photoMimeType};base64,${photoBase64}`;
 
-        const result = await runQuery(
-            `INSERT INTO tickets (name, email, cedula, phone, bank, ref, ticket_count, total_bs, photo_path) VALUES (?,?,?,?,?,?,?,?,?)`,
-            [name, email, cedula, phone, bank, ref, ticketCount, totalBs, photoPath]
-        );
-        const insertId = result.lastID;
+        const ticketRef = await db.collection('tickets').add({
+            name, email, cedula, phone, bank, ref, 
+            ticket_count: parseInt(ticketCount), 
+            total_bs: totalBs, 
+            photo_path: photoPath,
+            status: 'pending',
+            created_at: admin.firestore.FieldValue.serverTimestamp()
+        });
+        const insertId = ticketRef.id;
 
         if (bot && adminChatIds.length > 0) {
             const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -343,16 +303,20 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
 });
 
 // =========================================
-// LÓGICA DEL BOT
+// LÓGICA DEL BOT (Callbacks)
 // =========================================
 
 async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
     try {
-        const row = await getQuery(`SELECT * FROM tickets WHERE id = ?`, [id]);
-        if (!row) return bot.sendMessage(chatId, "Error encontrando el ticket.");
+        const ticketRef = db.collection('tickets').doc(id);
+        const ticketDoc = await ticketRef.get();
+        
+        if (!ticketDoc.exists) return bot.sendMessage(chatId, "Error encontrando el ticket.");
+        const row = ticketDoc.data();
+        
         if (row.status !== 'pending') return bot.answerCallbackQuery(callbackQueryId, { text: "Este pago ya fue procesado." }).catch(console.error);
 
-        await runQuery(`UPDATE tickets SET status = 'approved' WHERE id = ?`, [id]);
+        await ticketRef.update({ status: 'approved' });
 
         bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n✅ <b>APROBADO</b>`, {
             chat_id: chatId, message_id: messageId,
@@ -366,7 +330,12 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
 
         for (let i = 0; i < ticketCount; i++) {
             const ticketUuid = uuidv4();
-            await runQuery(`INSERT INTO qr_codes (ticket_id, uuid) VALUES (?, ?)`, [id, ticketUuid]);
+            await db.collection('qr_codes').add({
+                ticket_id: id,
+                uuid: ticketUuid,
+                status: 'approved',
+                created_at: admin.firestore.FieldValue.serverTimestamp()
+            });
 
             const qrDataUrl = await QRCode.toDataURL(ticketUuid, { color: { dark: '#000000', light: '#FFFFFF' }, margin: 2 });
             const qrBuffer = Buffer.from(qrDataUrl.split(',')[1], 'base64');
@@ -374,10 +343,14 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             // --- JIMP TICKET GENERATION ---
             const image = new Jimp(600, 1000, '#050505');
             try {
-                const logo = await Jimp.read(path.join(__dirname, 'assets', 'logo.png'));
-                logo.resize(Jimp.AUTO, 120);
-                const logoX = (600 - logo.bitmap.width) / 2;
-                image.composite(logo, logoX, 60);
+                // En Vercel, paths relativos pueden fallar si no se incluyen los assets. Asegurar usar __dirname.
+                const logoPath = path.join(__dirname, 'assets', 'logo.png');
+                if (fs.existsSync(logoPath)) {
+                    const logo = await Jimp.read(logoPath);
+                    logo.resize(Jimp.AUTO, 120);
+                    const logoX = (600 - logo.bitmap.width) / 2;
+                    image.composite(logo, logoX, 60);
+                }
             } catch (e) { console.error("Logo no encontrado", e); }
             
             const fontTitle = await Jimp.loadFont(Jimp.FONT_SANS_32_WHITE);
@@ -418,7 +391,6 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
         };
 
         if (process.env.APPS_SCRIPT_WEBHOOK_URL) {
-            // Enviar correo usando el puente de Google Apps Script para evitar bloqueos SMTP de Railway
             const payload = {
                 to: mailOptions.to,
                 subject: mailOptions.subject,
@@ -440,7 +412,6 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             .then(data => console.log("Email enviado vía Apps Script:", data))
             .catch(err => console.error("Error en Apps Script:", err));
         } else {
-            // Usar Nodemailer clásico (falla en Railway si los puertos SMTP están bloqueados)
             transporter.sendMail(mailOptions, (err, info) => {
                 if (err) console.error("Error email SMTP:", err);
                 else console.log("Email enviado SMTP:", info.response);
@@ -454,11 +425,15 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
 
 async function handleReject(id, chatId, messageId, caption, callbackQueryId) {
     try {
-        const row = await getQuery(`SELECT * FROM tickets WHERE id = ?`, [id]);
-        if (!row) return bot.sendMessage(chatId, "Error encontrando el ticket.");
+        const ticketRef = db.collection('tickets').doc(id);
+        const ticketDoc = await ticketRef.get();
+        if (!ticketDoc.exists) return bot.sendMessage(chatId, "Error encontrando el ticket.");
+        
+        const row = ticketDoc.data();
         if (row.status !== 'pending') return bot.answerCallbackQuery(callbackQueryId, { text: "Este pago ya fue procesado." }).catch(console.error);
 
-        await runQuery(`UPDATE tickets SET status = 'rejected' WHERE id = ?`, [id]);
+        await ticketRef.update({ status: 'rejected' });
+        
         bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n❌ <b>RECHAZADO</b>`, {
             chat_id: chatId, message_id: messageId,
             parse_mode: 'HTML', reply_markup: { inline_keyboard: [] }
@@ -477,20 +452,23 @@ async function handleCloseList(type, chatId, messageId, callbackQueryId) {
     }
     if (type === 'confirm') {
         try {
-            const rows = await allQuery(`SELECT name, cedula, email, phone, bank, ticket_count FROM tickets WHERE status = 'approved'`);
+            bot.editMessageText("⏳ Procesando el cierre y actualizando base de datos...", { chat_id: chatId, message_id: messageId });
 
-            let csv = '\uFEFFNombre y Apellido,Cedula,Correo,Telefono,Banco,Numero de Entradas\n';
-            rows.forEach(r => {
-                csv += `"${(r.name||'').replace(/"/g,'""')}","${r.cedula}","${(r.email||'').replace(/"/g,'""')}","${r.phone}","${(r.bank||'').replace(/"/g,'""')}",${r.ticket_count}\n`;
+            // Archivar tickets
+            const ticketsSnap = await db.collection('tickets').where('status', 'in', ['approved', 'pending']).get();
+            const batch = db.batch();
+            ticketsSnap.forEach(doc => {
+                batch.update(doc.ref, { status: 'archived' });
             });
 
-            bot.editMessageText("⏳ Procesando el cierre y generando respaldo final...", { chat_id: chatId, message_id: messageId });
+            // Archivar QRs
+            const qrSnap = await db.collection('qr_codes').where('status', 'in', ['approved', 'used']).get();
+            qrSnap.forEach(doc => {
+                batch.update(doc.ref, { status: 'archived' });
+            });
 
-            const buf = Buffer.from(csv, 'utf8');
-            await bot.sendDocument(chatId, buf, { caption: "📦 Respaldo final del evento." }, { filename: 'respaldo_cierre_lista.csv', contentType: 'text/csv' });
-
-            await runQuery(`UPDATE tickets SET status = 'archived' WHERE status != 'archived'`);
-            await runQuery(`UPDATE qr_codes SET status = 'archived' WHERE status != 'archived'`);
+            // Firestore limits batches to 500 operations. If event is small, it's fine.
+            await batch.commit();
 
             bot.sendMessage(chatId, "✅ <b>La lista ha sido cerrada exitosamente.</b>\nLos QRs antiguos ya no funcionarán. ¡Listo para el próximo evento!", { parse_mode: 'HTML' });
             bot.answerCallbackQuery(callbackQueryId);
@@ -510,20 +488,26 @@ app.post('/api/verify', async (req, res) => {
     if (!uuid) return res.status(400).json({ valid: false, message: 'No se proveyó código QR' });
 
     try {
-        const row = await getQuery(`
-            SELECT qr_codes.*, tickets.name, tickets.ticket_count
-            FROM qr_codes
-            JOIN tickets ON qr_codes.ticket_id = tickets.id
-            WHERE qr_codes.uuid = ?
-        `, [uuid]);
+        const qrSnapshot = await db.collection('qr_codes').where('uuid', '==', uuid).limit(1).get();
+        if (qrSnapshot.empty) return res.json({ valid: false, status: 'invalid', message: '❌ ENTRADA INVÁLIDA (No existe)' });
 
-        if (!row) return res.json({ valid: false, status: 'invalid', message: '❌ ENTRADA INVÁLIDA (No existe)' });
+        const qrDoc = qrSnapshot.docs[0];
+        const qrData = qrDoc.data();
 
-        if (row.status === 'used') return res.json({ valid: false, status: 'used', message: `❌ ENTRADA YA USADA\nNombre: ${row.name}` });
+        const ticketDoc = await db.collection('tickets').doc(qrData.ticket_id).get();
+        if (!ticketDoc.exists) return res.json({ valid: false, status: 'invalid', message: '❌ TICKET NO ENCONTRADO' });
+        
+        const ticketData = ticketDoc.data();
 
-        if (row.status === 'approved') {
-            await runQuery(`UPDATE qr_codes SET status = 'used', scanned_at = CURRENT_TIMESTAMP WHERE id = ?`, [row.id]);
-            return res.json({ valid: true, status: 'success', message: `✅ ACCESO PERMITIDO\nNombre: ${row.name}\nEntrada válida para 1 persona.` });
+        if (qrData.status === 'used') return res.json({ valid: false, status: 'used', message: `❌ ENTRADA YA USADA\nNombre: ${ticketData.name}` });
+        if (qrData.status === 'archived') return res.json({ valid: false, status: 'invalid', message: `❌ ENTRADA ARCHIVADA (Evento pasado)` });
+
+        if (qrData.status === 'approved') {
+            await db.collection('qr_codes').doc(qrDoc.id).update({ 
+                status: 'used', 
+                scanned_at: admin.firestore.FieldValue.serverTimestamp() 
+            });
+            return res.json({ valid: true, status: 'success', message: `✅ ACCESO PERMITIDO\nNombre: ${ticketData.name}\nEntrada válida para 1 persona.` });
         }
 
         return res.json({ valid: false, status: 'invalid', message: '❌ ENTRADA NO APROBADA' });
@@ -533,7 +517,14 @@ app.post('/api/verify', async (req, res) => {
     }
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`🚀 DOCS Backend corriendo en el puerto ${PORT}`);
-});
+// =========================================
+// INICIAR SERVIDOR (Local) O EXPORTAR (Vercel)
+// =========================================
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`🚀 DOCS Backend corriendo localmente en el puerto ${PORT}`);
+    });
+}
+
+// Exportar para Vercel Serverless Functions
+module.exports = app;

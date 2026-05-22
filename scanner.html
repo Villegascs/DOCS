@@ -93,7 +93,10 @@
             resultDiv.className = 'scanning';
             resultDiv.innerText = 'Verificando en Base de Datos...';
 
-            fetch('https://docs-events-backend-production.up.railway.app/api/verify', {
+            // IMPORTANTE: Cambia esta URL por la URL gratuita que te dé Vercel cuando despliegues el backend
+            const BACKEND_URL = 'https://docs-events-backend-production.up.railway.app'; // <--- CAMBIAR AQUÍ
+
+            fetch(`${BACKEND_URL}/api/verify`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json'

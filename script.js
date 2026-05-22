@@ -1,5 +1,8 @@
 // DOCS Web Interaction Script
 
+// IMPORTANTE: Cambia esta URL por la URL gratuita que te dé Vercel cuando despliegues el backend
+const BACKEND_URL = 'https://docs-events-backend-production.up.railway.app'; // <--- CAMBIAR AQUÍ
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Navbar Scroll Effect
     const navbar = document.getElementById('navbar');
@@ -119,8 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     formData.append('receipt', fileInput.files[0]);
                 }
 
-                // Enviar al Backend (Render)
-                const response = await fetch('https://docs-events-backend-production.up.railway.app/api/tickets/request', {
+                // Enviar al Backend (Vercel)
+                const response = await fetch(`${BACKEND_URL}/api/tickets/request`, {
                     method: 'POST',
                     body: formData
                 });
