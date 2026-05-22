@@ -308,7 +308,7 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
         res.json({ success: true, message: 'Pago registrado. Esperando verificación.' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error del servidor' });
+        res.status(500).json({ error: `Error: ${error.message || error.toString()}` });
     }
 });
 
