@@ -216,6 +216,69 @@ if (token && adminChatIds.length > 0) {
         }
     });
 
+    // Comando /pendientes
+    bot.onText(/\/pendientes/, async (msg) => {
+        const chatId = msg.chat.id;
+        if (!adminChatIds.includes(chatId.toString())) return;
+
+        try {
+            const rows = await allQuery(`SELECT * FROM tickets WHERE status = 'pending'`);
+            if (rows.length === 0) return bot.sendMessage(chatId, "✅ No hay pagos pendientes.");
+
+            bot.sendMessage(chatId, `⏳ Enviando ${rows.length} pago(s) pendiente(s)...`);
+
+            for (const row of rows) {
+                const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const caption = `🚨 <b>PAGO PENDIENTE RECUPERADO</b> 🚨\n\n` +
+                    `👤 <b>Nombre</b>: ${escapeHTML(row.name)}\n` +
+                    `📧 <b>Email</b>: ${escapeHTML(row.email)}\n` +
+                    `🆔 <b>Cédula</b>: ${escapeHTML(row.cedula)}\n` +
+                    `📱 <b>Teléfono</b>: ${escapeHTML(row.phone)}\n` +
+                    `🎟 <b>Entradas</b>: ${escapeHTML(row.ticket_count)}\n` +
+                    `💰 <b>Total Bs</b>: ${escapeHTML(row.total_bs)}\n` +
+                    `🏦 <b>Banco</b>: ${escapeHTML(row.bank)} (Ref: ${escapeHTML(row.ref)})`;
+
+                let photoBuffer;
+                let mimeType = 'image/jpeg';
+                if (row.photo_path && row.photo_path.startsWith('data:')) {
+                    const parts = row.photo_path.split(';base64,');
+                    if (parts.length === 2) {
+                        mimeType = parts[0].split(':')[1];
+                        photoBuffer = Buffer.from(parts[1], 'base64');
+                    }
+                }
+
+                if (photoBuffer) {
+                    await bot.sendPhoto(chatId, photoBuffer, {
+                        caption,
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [[
+                                { text: '✅ Aprobar y Enviar', callback_data: `approve_${row.id}` },
+                                { text: '❌ Rechazar', callback_data: `reject_${row.id}` }
+                            ]]
+                        }
+                    }, { filename: 'comprobante.jpg', contentType: mimeType }).catch(e => console.error(e));
+                } else {
+                    await bot.sendMessage(chatId, caption + `\n\n⚠️ <i>No se pudo recuperar la imagen del comprobante.</i>`, {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            inline_keyboard: [[
+                                { text: '✅ Aprobar y Enviar', callback_data: `approve_${row.id}` },
+                                { text: '❌ Rechazar', callback_data: `reject_${row.id}` }
+                            ]]
+                        }
+                    });
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        } catch (e) {
+            console.error(e);
+            bot.sendMessage(chatId, "❌ Error buscando pagos pendientes.");
+        }
+    });
+
 } else {
     console.warn("⚠️ TELEGRAM_BOT_TOKEN o ADMIN_CHAT_ID no configurados.");
 }
