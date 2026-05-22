@@ -237,6 +237,17 @@ const transporter = nodemailer.createTransport({
 // RUTAS DE LA API
 // =========================================
 
+app.get('/api/debug', async (req, res) => {
+    try {
+        const snap = await db.collection('tickets').orderBy('created_at', 'desc').limit(5).get();
+        const tickets = [];
+        snap.forEach(d => tickets.push({ id: d.id, data: d.data() }));
+        res.json({ success: true, count: tickets.length, tickets });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Recibir formulario de pago
 app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
     try {
