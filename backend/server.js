@@ -470,10 +470,18 @@ async function handleCloseList(type, chatId, messageId, callbackQueryId) {
         try {
             bot.editMessageText("⏳ Procesando el cierre y actualizando base de datos...", { chat_id: chatId, message_id: messageId });
 
-            // Archivar tickets
+            // Archivar tickets y construir CSV
             const ticketsSnap = await db.collection('tickets').where('status', 'in', ['approved', 'pending']).get();
             const batch = db.batch();
+            let csv = '\uFEFFNombre y Apellido,Cedula,Correo,Telefono,Banco,Numero de Entradas,Status\n';
+            let hasApproved = false;
+
             ticketsSnap.forEach(doc => {
+                const r = doc.data();
+                if (r.status === 'approved') {
+                    hasApproved = true;
+                    csv += `"${(r.name||'').replace(/"/g,'""')}","${r.cedula}","${(r.email||'').replace(/"/g,'""')}","${r.phone}","${(r.bank||'').replace(/"/g,'""')}",${r.ticket_count},"Aprobado"\n`;
+                }
                 batch.update(doc.ref, { status: 'archived' });
             });
 
@@ -482,6 +490,12 @@ async function handleCloseList(type, chatId, messageId, callbackQueryId) {
             qrSnap.forEach(doc => {
                 batch.update(doc.ref, { status: 'archived' });
             });
+
+            // Enviar archivo CSV si hubo aprobados
+            if (hasApproved) {
+                const buf = Buffer.from(csv, 'utf8');
+                await bot.sendDocument(chatId, buf, { caption: '📊 Backup Automático: Historial de la lista cerrada.' }, { filename: 'cierre_de_lista.csv', contentType: 'text/csv' }).catch(console.error);
+            }
 
             // Firestore limits batches to 500 operations. If event is small, it's fine.
             await batch.commit();
