@@ -1,7 +1,7 @@
 // DOCS Web Interaction Script
 
 // IMPORTANTE: Cambia esta URL por la URL gratuita que te dé Vercel cuando despliegues el backend
-const BACKEND_URL = 'https://docs-events-backend-production.up.railway.app'; // <--- CAMBIAR AQUÍ
+const BACKEND_URL = 'https://docs-lime-tau.vercel.app'; // <--- URL DE VERCEL
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Navbar Scroll Effect
