@@ -32,6 +32,7 @@ const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } }); // 5M
 // =========================================
 // CONFIGURAR FIREBASE FIRESTORE
 // =========================================
+let db = null;
 if (!admin.apps.length) {
     try {
         if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -40,15 +41,26 @@ if (!admin.apps.length) {
                 credential: admin.credential.cert(serviceAccount)
             });
             console.log('✅ Firebase Admin Inicializado');
+            db = admin.firestore();
         } else {
             console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT no configurado en variables de entorno.');
             admin.initializeApp(); // Intentar con credenciales por defecto de entorno
+            db = admin.firestore();
         }
     } catch (e) {
-        console.error('Error inicializando Firebase:', e);
+        console.error('❌ Error CRÍTICO inicializando Firebase. Revisa que el JSON en FIREBASE_SERVICE_ACCOUNT sea válido:', e.message);
     }
+} else {
+    db = admin.firestore();
 }
-const db = admin.firestore();
+
+// Middleware de seguridad para evitar que las rutas se ejecuten si Firebase falló
+app.use((req, res, next) => {
+    if (!db && req.path !== '/') {
+        return res.status(500).json({ error: 'El servidor arrancó pero Firebase no pudo conectarse. Revisa la variable FIREBASE_SERVICE_ACCOUNT en Vercel.' });
+    }
+    next();
+});
 
 // =========================================
 // CONFIGURAR TELEGRAM BOT
