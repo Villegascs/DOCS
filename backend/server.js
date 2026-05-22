@@ -248,6 +248,17 @@ app.get('/api/debug', async (req, res) => {
     }
 });
 
+app.get('/api/debug-env', (req, res) => {
+    res.json({
+        hasToken: !!process.env.TELEGRAM_BOT_TOKEN,
+        tokenLength: process.env.TELEGRAM_BOT_TOKEN ? process.env.TELEGRAM_BOT_TOKEN.length : 0,
+        hasChatId: !!process.env.TELEGRAM_ADMIN_CHAT_ID,
+        chatIdLength: process.env.TELEGRAM_ADMIN_CHAT_ID ? process.env.TELEGRAM_ADMIN_CHAT_ID.length : 0,
+        hasBotInstance: !!bot,
+        chatIdsParsed: adminChatIds
+    });
+});
+
 // Recibir formulario de pago
 app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
     try {
