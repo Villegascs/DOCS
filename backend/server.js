@@ -291,8 +291,8 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
                 `🏦 <b>Banco</b>: ${escapeHTML(bank)} (Ref: ${escapeHTML(ref)})`;
 
             const photoBuffer = Buffer.from(photoBase64, 'base64');
-            adminChatIds.forEach(chatId => {
-                bot.sendPhoto(chatId, photoBuffer, {
+            for (const chatId of adminChatIds) {
+                await bot.sendPhoto(chatId, photoBuffer, {
                     caption,
                     parse_mode: 'HTML',
                     reply_markup: {
@@ -302,7 +302,7 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
                         ]]
                     }
                 }, { filename: 'comprobante.jpg', contentType: photoMimeType }).catch(e => console.error(`Error Telegram enviando a ${chatId}:`, e));
-            });
+            }
         }
 
         res.json({ success: true, message: 'Pago registrado. Esperando verificación.' });
