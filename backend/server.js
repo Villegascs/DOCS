@@ -8,6 +8,7 @@ const QRCode = require('qrcode');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const Jimp = require('jimp');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -307,11 +308,11 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
 
         await ticketRef.update({ status: 'approved' });
 
-        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n✅ <b>APROBADO</b>`, {
+        await bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n✅ <b>APROBADO</b>`, {
             chat_id: chatId, message_id: messageId,
             parse_mode: 'HTML', reply_markup: { inline_keyboard: [] }
-        });
-        bot.answerCallbackQuery(callbackQueryId).catch(console.error);
+        }).catch(console.error);
+        await bot.answerCallbackQuery(callbackQueryId).catch(console.error);
 
         const ticketCount = row.ticket_count;
         const attachments = [];
@@ -392,18 +393,24 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
                 }))
             };
             
-            fetch(process.env.APPS_SCRIPT_WEBHOOK_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 'Content-Type': 'application/json' }
-            })
-            .then(res => res.json())
-            .then(data => console.log("Email enviado vía Apps Script:", data))
-            .catch(err => console.error("Error en Apps Script:", err));
+            try {
+                const res = await fetch(process.env.APPS_SCRIPT_WEBHOOK_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                console.log("Email enviado vía Apps Script:", data);
+            } catch(err) {
+                console.error("Error en Apps Script:", err);
+            }
         } else {
-            transporter.sendMail(mailOptions, (err, info) => {
-                if (err) console.error("Error email SMTP:", err);
-                else console.log("Email enviado SMTP:", info.response);
+            await new Promise((resolve) => {
+                transporter.sendMail(mailOptions, (err, info) => {
+                    if (err) console.error("Error email SMTP:", err);
+                    else console.log("Email enviado SMTP:", info.response);
+                    resolve();
+                });
             });
         }
 
@@ -423,11 +430,11 @@ async function handleReject(id, chatId, messageId, caption, callbackQueryId) {
 
         await ticketRef.update({ status: 'rejected' });
         
-        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n❌ <b>RECHAZADO</b>`, {
+        await bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n❌ <b>RECHAZADO</b>`, {
             chat_id: chatId, message_id: messageId,
             parse_mode: 'HTML', reply_markup: { inline_keyboard: [] }
-        });
-        bot.answerCallbackQuery(callbackQueryId, { text: "Pago rechazado." }).catch(console.error);
+        }).catch(console.error);
+        await bot.answerCallbackQuery(callbackQueryId, { text: "Pago rechazado." }).catch(console.error);
     } catch (e) {
         console.error("Error en handleReject:", e);
     }
