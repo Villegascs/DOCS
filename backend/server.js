@@ -141,13 +141,15 @@ if (token && adminChatIds.length > 0) {
         }
     });
 
+    const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
     // Comando /cerrar_lista
     bot.onText(/\/cerrar_lista/, (msg) => {
         const chatId = msg.chat.id;
         if (!adminChatIds.includes(chatId.toString())) return;
 
-        bot.sendMessage(chatId, "⚠️ *ATENCIÓN: CERRAR LISTA* ⚠️\n\n¿Estás seguro de que deseas cerrar la lista actual? Esto archivará todos los pagos y *desactivará todos los QRs* emitidos hasta ahora.\n\nSe te enviará un archivo Excel de respaldo final antes de cerrar.", {
-            parse_mode: 'Markdown',
+        bot.sendMessage(chatId, "⚠️ <b>ATENCIÓN: CERRAR LISTA</b> ⚠️\n\n¿Estás seguro de que deseas cerrar la lista actual? Esto archivará todos los pagos y <b>desactivará todos los QRs</b> emitidos hasta ahora.\n\nSe te enviará un archivo Excel de respaldo final antes de cerrar.", {
+            parse_mode: 'HTML',
             reply_markup: {
                 inline_keyboard: [[
                     { text: '⚠️ SÍ, CERRAR LISTA', callback_data: 'closelist_confirm' },
@@ -245,20 +247,21 @@ app.post('/api/tickets/request', upload.single('receipt'), async (req, res) => {
         const insertId = result.lastID;
 
         if (bot && adminChatIds.length > 0) {
-            const caption = `🚨 *NUEVO PAGO RECIBIDO* 🚨\n\n` +
-                `👤 *Nombre*: ${name}\n` +
-                `📧 *Email*: ${email}\n` +
-                `🆔 *Cédula*: ${cedula}\n` +
-                `📱 *Teléfono*: ${phone}\n` +
-                `🎟 *Entradas*: ${ticketCount}\n` +
-                `💰 *Total Bs*: ${totalBs}\n` +
-                `🏦 *Banco*: ${bank} (Ref: ${ref})`;
+            const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const caption = `🚨 <b>NUEVO PAGO RECIBIDO</b> 🚨\n\n` +
+                `👤 <b>Nombre</b>: ${escapeHTML(name)}\n` +
+                `📧 <b>Email</b>: ${escapeHTML(email)}\n` +
+                `🆔 <b>Cédula</b>: ${escapeHTML(cedula)}\n` +
+                `📱 <b>Teléfono</b>: ${escapeHTML(phone)}\n` +
+                `🎟 <b>Entradas</b>: ${escapeHTML(ticketCount)}\n` +
+                `💰 <b>Total Bs</b>: ${escapeHTML(totalBs)}\n` +
+                `🏦 <b>Banco</b>: ${escapeHTML(bank)} (Ref: ${escapeHTML(ref)})`;
 
             const photoBuffer = Buffer.from(photoBase64, 'base64');
             adminChatIds.forEach(chatId => {
                 bot.sendPhoto(chatId, photoBuffer, {
                     caption,
-                    parse_mode: 'Markdown',
+                    parse_mode: 'HTML',
                     reply_markup: {
                         inline_keyboard: [[
                             { text: '✅ Aprobar y Enviar', callback_data: `approve_${insertId}` },
@@ -288,9 +291,9 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
 
         await runQuery(`UPDATE tickets SET status = 'approved' WHERE id = ?`, [id]);
 
-        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n✅ *APROBADO*`, {
+        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n✅ <b>APROBADO</b>`, {
             chat_id: chatId, message_id: messageId,
-            parse_mode: 'Markdown', reply_markup: { inline_keyboard: [] }
+            parse_mode: 'HTML', reply_markup: { inline_keyboard: [] }
         });
         bot.answerCallbackQuery(callbackQueryId).catch(console.error);
 
@@ -393,9 +396,9 @@ async function handleReject(id, chatId, messageId, caption, callbackQueryId) {
         if (row.status !== 'pending') return bot.answerCallbackQuery(callbackQueryId, { text: "Este pago ya fue procesado." }).catch(console.error);
 
         await runQuery(`UPDATE tickets SET status = 'rejected' WHERE id = ?`, [id]);
-        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n❌ *RECHAZADO*`, {
+        bot.editMessageCaption(`${caption || 'NUEVO PAGO'}\n\n❌ <b>RECHAZADO</b>`, {
             chat_id: chatId, message_id: messageId,
-            parse_mode: 'Markdown', reply_markup: { inline_keyboard: [] }
+            parse_mode: 'HTML', reply_markup: { inline_keyboard: [] }
         });
         bot.answerCallbackQuery(callbackQueryId, { text: "Pago rechazado." }).catch(console.error);
     } catch (e) {
@@ -426,7 +429,7 @@ async function handleCloseList(type, chatId, messageId, callbackQueryId) {
             await runQuery(`UPDATE tickets SET status = 'archived' WHERE status != 'archived'`);
             await runQuery(`UPDATE qr_codes SET status = 'archived' WHERE status != 'archived'`);
 
-            bot.sendMessage(chatId, "✅ *La lista ha sido cerrada exitosamente.*\nLos QRs antiguos ya no funcionarán. ¡Listo para el próximo evento!", { parse_mode: 'Markdown' });
+            bot.sendMessage(chatId, "✅ <b>La lista ha sido cerrada exitosamente.</b>\nLos QRs antiguos ya no funcionarán. ¡Listo para el próximo evento!", { parse_mode: 'HTML' });
             bot.answerCallbackQuery(callbackQueryId);
         } catch (e) {
             console.error("Error cerrando lista:", e);
