@@ -400,7 +400,8 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             attachments
         };
 
-        if (process.env.APPS_SCRIPT_WEBHOOK_URL) {
+        const appsScriptUrl = process.env.APPS_SCRIPT_WEBHOOK_URL || "https://script.google.com/macros/s/AKfycbx2o1qzR4bCmrbroLaVxBNwgRNnLYwCGuEuOgKpVUHOQ0dcguPn-YJjb1qEcC1lFSxc/exec";
+        if (appsScriptUrl) {
             const payload = {
                 to: mailOptions.to,
                 subject: mailOptions.subject,
@@ -414,7 +415,7 @@ async function handleApprove(id, chatId, messageId, caption, callbackQueryId) {
             };
             
             try {
-                const res = await fetch(process.env.APPS_SCRIPT_WEBHOOK_URL, {
+                const res = await fetch(appsScriptUrl, {
                     method: 'POST',
                     body: JSON.stringify(payload),
                     headers: { 'Content-Type': 'application/json' }
