@@ -159,8 +159,8 @@
         <div class="modal-content glass-panel">
             <span class="close-modal" onclick="closePaymentModal()">&times;</span>
             <h2>Verificación de <span class="highlight">Pago</span></h2>
-            <p>Para asegurar tus entradas a <strong>DOCS</strong> (€3 c/u), realiza el pago vía Pago Móvil o
-                Zelle y envía el comprobante.</p>
+            <p>Para asegurar tus entradas a <strong>DOCS</strong> (€3 c/u), realiza el pago vía Pago Móvil,
+                Zelle o Binance y envía el comprobante.</p>
 
             <div class="payment-info">
                 <div class="bank-details">
@@ -180,6 +180,11 @@
                         Correo: contactofabianramirez@gmail.com <i class="fa-regular fa-copy"></i></p>
                     <p class="copyable" onclick="copyText('Fabian Ramirez')" title="Copiar Titular">Titular: Fabian
                         Ramirez <i class="fa-regular fa-copy"></i></p>
+                </div>
+                <div class="bank-details" style="grid-column: 1 / -1; margin-top: -0.5rem;">
+                    <h4>Binance (USDT)</h4>
+                    <p class="copyable" onclick="copyText('zbcaj33@gmail.com')" title="Copiar Correo Binance">
+                        Correo (Binance Pay): zbcaj33@gmail.com <i class="fa-regular fa-copy"></i></p>
                 </div>
             </div>
 
@@ -212,6 +217,7 @@
                         <select id="bank" required>
                             <option value="">Selecciona una opción</option>
                             <option value="Zelle">Zelle</option>
+                            <option value="Binance">Binance</option>
                             <option value="Banco de Venezuela (BDV)">Banco de Venezuela (BDV)</option>
                             <option value="Banco Nacional de Crédito (BNC)">Banco Nacional de Crédito (BNC)</option>
                             <option value="BBVA Provincial">BBVA Provincial</option>
