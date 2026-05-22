@@ -81,170 +81,147 @@ if (token && adminChatIds.length > 0) {
     bot.setWebHook(`${SERVER_URL}/api/telegram-webhook`).catch(console.error);
 
     // Ruta de Express para recibir las actualizaciones de Telegram
-    app.post('/api/telegram-webhook', (req, res) => {
-        bot.processUpdate(req.body);
-        res.sendStatus(200);
-    });
-
-    // Manejar botones inline
-    bot.on('callback_query', async (query) => {
-        const [action, id] = query.data.split('_');
-        const chatId = query.message.chat.id;
-        const messageId = query.message.message_id;
-        const callbackQueryId = query.id;
-
-        if (action === 'approve') {
-            await handleApprove(id, chatId, messageId, query.message.caption, callbackQueryId);
-        } else if (action === 'reject') {
-            await handleReject(id, chatId, messageId, query.message.caption, callbackQueryId);
-        } else if (action === 'closelist') {
-            await handleCloseList(id, chatId, messageId, callbackQueryId);
-        }
-    });
-
-    const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-    // Comando /cerrar_lista
-    bot.onText(/\/cerrar_lista/, (msg) => {
-        const chatId = msg.chat.id;
-        if (!adminChatIds.includes(chatId.toString())) return;
-
-        bot.sendMessage(chatId, "⚠️ <b>ATENCIÓN: CERRAR LISTA</b> ⚠️\n\n¿Estás seguro de que deseas cerrar la lista actual? Esto archivará todos los pagos y <b>desactivará todos los QRs</b> emitidos hasta ahora.", {
-            parse_mode: 'HTML',
-            reply_markup: {
-                inline_keyboard: [[
-                    { text: '⚠️ SÍ, CERRAR LISTA', callback_data: 'closelist_confirm' },
-                    { text: '❌ Cancelar', callback_data: 'closelist_cancel' }
-                ]]
-            }
-        });
-    });
-
-    // Comando /historial
-    bot.onText(/\/historial/, async (msg) => {
-        const chatId = msg.chat.id;
-        if (!adminChatIds.includes(chatId.toString())) return;
-
+    app.post('/api/telegram-webhook', async (req, res) => {
         try {
-            const snapshot = await db.collection('tickets').where('status', '==', 'approved').get();
-            if (snapshot.empty) return bot.sendMessage(chatId, "⚠️ Aún no hay pagos aprobados.");
-
-            let csv = '\uFEFFNombre y Apellido,Cedula,Correo,Telefono,Banco,Numero de Entradas\n';
-            snapshot.forEach(doc => {
-                const r = doc.data();
-                csv += `"${(r.name||'').replace(/"/g,'""')}","${r.cedula}","${(r.email||'').replace(/"/g,'""')}","${r.phone}","${(r.bank||'').replace(/"/g,'""')}",${r.ticket_count}\n`;
-            });
-
-            const buf = Buffer.from(csv, 'utf8');
-            bot.sendDocument(chatId, buf, { caption: '📊 Historial de pagos aprobados.' }, { filename: 'aprobados.csv', contentType: 'text/csv' })
-               .catch(() => bot.sendMessage(chatId, '❌ Error al enviar el archivo.'));
-        } catch (e) {
-            console.error(e);
-            bot.sendMessage(chatId, '❌ Error generando el historial.');
-        }
-    });
-
-    // Comando /asistencias
-    bot.onText(/\/asistencias/, async (msg) => {
-        const chatId = msg.chat.id;
-        if (!adminChatIds.includes(chatId.toString())) return;
-
-        try {
-            const qrSnapshot = await db.collection('qr_codes').where('status', '==', 'used').get();
-            if (qrSnapshot.empty) return bot.sendMessage(chatId, "⚠️ Aún no hay ninguna entrada escaneada.");
-
-            let csv = '\uFEFFNombre y Apellido,Cedula,Hora de Ingreso\n';
+            const body = req.body;
             
-            // Recopilar datos (puede ser lento si hay muchos, pero en Firebase es aceptable para eventos pequeños)
-            const ticketCache = {};
-            for (const qrDoc of qrSnapshot.docs) {
-                const q = qrDoc.data();
-                if (!ticketCache[q.ticket_id]) {
-                    const tDoc = await db.collection('tickets').doc(q.ticket_id).get();
-                    if (tDoc.exists) ticketCache[q.ticket_id] = tDoc.data();
+            if (body.callback_query) {
+                const query = body.callback_query;
+                const [action, id] = query.data.split('_');
+                const chatId = query.message.chat.id;
+                const messageId = query.message.message_id;
+                const callbackQueryId = query.id;
+
+                if (action === 'approve') {
+                    await handleApprove(id, chatId, messageId, query.message.caption, callbackQueryId);
+                } else if (action === 'reject') {
+                    await handleReject(id, chatId, messageId, query.message.caption, callbackQueryId);
+                } else if (action === 'closelist') {
+                    await handleCloseList(id, chatId, messageId, callbackQueryId);
                 }
-                const t = ticketCache[q.ticket_id] || {};
+            } 
+            else if (body.message && body.message.text) {
+                const msg = body.message;
+                const text = msg.text;
+                const chatId = msg.chat.id;
                 
-                let hora = 'Desconocida';
-                if (q.scanned_at) {
-                    const dateObj = q.scanned_at.toDate ? q.scanned_at.toDate() : new Date(q.scanned_at);
-                    hora = dateObj.toLocaleString('es-VE', { timeZone: 'America/Caracas' });
-                }
-                csv += `"${(t.name||'').replace(/"/g,'""')}","${t.cedula||''}","${hora}"\n`;
-            }
-
-            const buf = Buffer.from(csv, 'utf8');
-            bot.sendDocument(chatId, buf, { caption: '🎟️ Reporte de asistencias (entradas escaneadas).' }, { filename: 'asistencias.csv', contentType: 'text/csv' })
-               .catch(() => bot.sendMessage(chatId, '❌ Error al enviar el archivo.'));
-        } catch (e) {
-            console.error(e);
-            bot.sendMessage(chatId, '❌ Error generando asistencias.');
-        }
-    });
-
-    // Comando /pendientes
-    bot.onText(/\/pendientes/, async (msg) => {
-        const chatId = msg.chat.id;
-        if (!adminChatIds.includes(chatId.toString())) return;
-
-        try {
-            const snapshot = await db.collection('tickets').where('status', '==', 'pending').get();
-            if (snapshot.empty) return bot.sendMessage(chatId, "✅ No hay pagos pendientes.");
-
-            bot.sendMessage(chatId, `⏳ Enviando ${snapshot.size} pago(s) pendiente(s)...`);
-
-            for (const doc of snapshot.docs) {
-                const row = doc.data();
-                const id = doc.id;
-                
-                const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                const caption = `🚨 <b>PAGO PENDIENTE RECUPERADO</b> 🚨\n\n` +
-                    `👤 <b>Nombre</b>: ${escapeHTML(row.name)}\n` +
-                    `📧 <b>Email</b>: ${escapeHTML(row.email)}\n` +
-                    `🆔 <b>Cédula</b>: ${escapeHTML(row.cedula)}\n` +
-                    `📱 <b>Teléfono</b>: ${escapeHTML(row.phone)}\n` +
-                    `🎟 <b>Entradas</b>: ${escapeHTML(row.ticket_count)}\n` +
-                    `💰 <b>Total Bs</b>: ${escapeHTML(row.total_bs)}\n` +
-                    `🏦 <b>Banco</b>: ${escapeHTML(row.bank)} (Ref: ${escapeHTML(row.ref)})`;
-
-                let photoBuffer;
-                let mimeType = 'image/jpeg';
-                if (row.photo_path && row.photo_path.startsWith('data:')) {
-                    const parts = row.photo_path.split(';base64,');
-                    if (parts.length === 2) {
-                        mimeType = parts[0].split(':')[1];
-                        photoBuffer = Buffer.from(parts[1], 'base64');
+                if (adminChatIds.includes(chatId.toString())) {
+                    if (text === '/cerrar_lista') {
+                        await bot.sendMessage(chatId, "⚠️ <b>ATENCIÓN: CERRAR LISTA</b> ⚠️\n\n¿Estás seguro de que deseas cerrar la lista actual? Esto archivará todos los pagos y <b>desactivará todos los QRs</b> emitidos hasta ahora.", {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: [[
+                                    { text: '⚠️ SÍ, CERRAR LISTA', callback_data: 'closelist_confirm' },
+                                    { text: '❌ Cancelar', callback_data: 'closelist_cancel' }
+                                ]]
+                            }
+                        });
+                    } else if (text === '/historial') {
+                        try {
+                            const snapshot = await db.collection('tickets').where('status', '==', 'approved').get();
+                            if (snapshot.empty) {
+                                await bot.sendMessage(chatId, "⚠️ Aún no hay pagos aprobados.");
+                            } else {
+                                let csv = '\uFEFFNombre y Apellido,Cedula,Correo,Telefono,Banco,Numero de Entradas\n';
+                                snapshot.forEach(doc => {
+                                    const r = doc.data();
+                                    csv += `"${(r.name||'').replace(/"/g,'""')}","${r.cedula}","${(r.email||'').replace(/"/g,'""')}","${r.phone}","${(r.bank||'').replace(/"/g,'""')}",${r.ticket_count}\n`;
+                                });
+                                const buf = Buffer.from(csv, 'utf8');
+                                await bot.sendDocument(chatId, buf, { caption: '📊 Historial de pagos aprobados.' }, { filename: 'aprobados.csv', contentType: 'text/csv' }).catch(() => bot.sendMessage(chatId, '❌ Error al enviar el archivo.'));
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            await bot.sendMessage(chatId, '❌ Error generando el historial.');
+                        }
+                    } else if (text === '/asistencias') {
+                        try {
+                            const qrSnapshot = await db.collection('qr_codes').where('status', '==', 'used').get();
+                            if (qrSnapshot.empty) {
+                                await bot.sendMessage(chatId, "⚠️ Aún no hay ninguna entrada escaneada.");
+                            } else {
+                                let csv = '\uFEFFNombre y Apellido,Cedula,Hora de Ingreso\n';
+                                const ticketCache = {};
+                                for (const qrDoc of qrSnapshot.docs) {
+                                    const q = qrDoc.data();
+                                    if (!ticketCache[q.ticket_id]) {
+                                        const tDoc = await db.collection('tickets').doc(q.ticket_id).get();
+                                        if (tDoc.exists) ticketCache[q.ticket_id] = tDoc.data();
+                                    }
+                                    const t = ticketCache[q.ticket_id] || {};
+                                    let hora = 'Desconocida';
+                                    if (q.scanned_at) {
+                                        const dateObj = q.scanned_at.toDate ? q.scanned_at.toDate() : new Date(q.scanned_at);
+                                        hora = dateObj.toLocaleString('es-VE', { timeZone: 'America/Caracas' });
+                                    }
+                                    csv += `"${(t.name||'').replace(/"/g,'""')}","${t.cedula||''}","${hora}"\n`;
+                                }
+                                const buf = Buffer.from(csv, 'utf8');
+                                await bot.sendDocument(chatId, buf, { caption: '🎟️ Reporte de asistencias (entradas escaneadas).' }, { filename: 'asistencias.csv', contentType: 'text/csv' }).catch(() => bot.sendMessage(chatId, '❌ Error al enviar el archivo.'));
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            await bot.sendMessage(chatId, '❌ Error generando asistencias.');
+                        }
+                    } else if (text === '/pendientes') {
+                        try {
+                            const snapshot = await db.collection('tickets').where('status', '==', 'pending').get();
+                            if (snapshot.empty) {
+                                await bot.sendMessage(chatId, "✅ No hay pagos pendientes.");
+                            } else {
+                                await bot.sendMessage(chatId, `⏳ Enviando ${snapshot.size} pago(s) pendiente(s)...`);
+                                for (const doc of snapshot.docs) {
+                                    const row = doc.data();
+                                    const id = doc.id;
+                                    const escapeHTML = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                    const caption = `🚨 <b>PAGO PENDIENTE RECUPERADO</b> 🚨\n\n👤 <b>Nombre</b>: ${escapeHTML(row.name)}\n📧 <b>Email</b>: ${escapeHTML(row.email)}\n🆔 <b>Cédula</b>: ${escapeHTML(row.cedula)}\n📱 <b>Teléfono</b>: ${escapeHTML(row.phone)}\n🎟 <b>Entradas</b>: ${escapeHTML(row.ticket_count)}\n💰 <b>Total Bs</b>: ${escapeHTML(row.total_bs)}\n🏦 <b>Banco</b>: ${escapeHTML(row.bank)} (Ref: ${escapeHTML(row.ref)})`;
+                                    let photoBuffer;
+                                    let mimeType = 'image/jpeg';
+                                    if (row.photo_path && row.photo_path.startsWith('data:')) {
+                                        const parts = row.photo_path.split(';base64,');
+                                        if (parts.length === 2) {
+                                            mimeType = parts[0].split(':')[1];
+                                            photoBuffer = Buffer.from(parts[1], 'base64');
+                                        }
+                                    }
+                                    if (photoBuffer) {
+                                        await bot.sendPhoto(chatId, photoBuffer, {
+                                            caption,
+                                            parse_mode: 'HTML',
+                                            reply_markup: {
+                                                inline_keyboard: [[
+                                                    { text: '✅ Aprobar y Enviar', callback_data: `approve_${id}` },
+                                                    { text: '❌ Rechazar', callback_data: `reject_${id}` }
+                                                ]]
+                                            }
+                                        }, { filename: 'comprobante.jpg', contentType: mimeType }).catch(e => console.error(e));
+                                    } else {
+                                        await bot.sendMessage(chatId, caption + `\n\n⚠️ <i>No se pudo recuperar la imagen.</i>`, {
+                                            parse_mode: 'HTML',
+                                            reply_markup: {
+                                                inline_keyboard: [[
+                                                    { text: '✅ Aprobar y Enviar', callback_data: `approve_${id}` },
+                                                    { text: '❌ Rechazar', callback_data: `reject_${id}` }
+                                                ]]
+                                            }
+                                        });
+                                    }
+                                    await new Promise(resolve => setTimeout(resolve, 500));
+                                }
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            await bot.sendMessage(chatId, "❌ Error buscando pagos pendientes.");
+                        }
                     }
                 }
-
-                if (photoBuffer) {
-                    await bot.sendPhoto(chatId, photoBuffer, {
-                        caption,
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [[
-                                { text: '✅ Aprobar y Enviar', callback_data: `approve_${id}` },
-                                { text: '❌ Rechazar', callback_data: `reject_${id}` }
-                            ]]
-                        }
-                    }, { filename: 'comprobante.jpg', contentType: mimeType }).catch(e => console.error(e));
-                } else {
-                    await bot.sendMessage(chatId, caption + `\n\n⚠️ <i>No se pudo recuperar la imagen.</i>`, {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [[
-                                { text: '✅ Aprobar y Enviar', callback_data: `approve_${id}` },
-                                { text: '❌ Rechazar', callback_data: `reject_${id}` }
-                            ]]
-                        }
-                    });
-                }
-                await new Promise(resolve => setTimeout(resolve, 500));
             }
-        } catch (e) {
-            console.error(e);
-            bot.sendMessage(chatId, "❌ Error buscando pagos pendientes.");
+        } catch (error) {
+            console.error('Error procesando el webhook de Telegram:', error);
         }
+        
+        // Confirmar a Telegram que recibimos el mensaje
+        res.sendStatus(200);
     });
 
 } else {
