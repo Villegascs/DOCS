@@ -107,7 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formData = new FormData();
                 formData.append('name', document.getElementById('name').value);
                 formData.append('email', document.getElementById('email').value);
-                formData.append('cedula', document.getElementById('cedula').value);
+                
+                const cedulaPrefix = document.getElementById('cedula-prefix').value;
+                const cedulaNumber = document.getElementById('cedula').value;
+                formData.append('cedula', cedulaPrefix + cedulaNumber);
+                
                 formData.append('phone', document.getElementById('phone').value);
                 formData.append('bank', document.getElementById('bank').value);
                 formData.append('ref', document.getElementById('ref').value);
