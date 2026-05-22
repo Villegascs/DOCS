@@ -715,6 +715,31 @@ h4 {
     margin-bottom: 0.2rem;
 }
 
+.copyable {
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.3rem;
+    border-radius: 4px;
+}
+
+.copyable:hover {
+    color: var(--primary-neon);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.copyable i {
+    font-size: 0.8rem;
+    opacity: 0;
+    transition: var(--transition-fast);
+}
+
+.copyable:hover i {
+    opacity: 1;
+}
+
 @media (max-width: 600px) {
     .payment-info {
         grid-template-columns: 1fr;

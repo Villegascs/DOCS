@@ -159,15 +159,15 @@
         <div class="modal-content glass-panel">
             <span class="close-modal" onclick="closePaymentModal()">&times;</span>
             <h2>Verificación de <span class="highlight">Pago</span></h2>
-            <p>Para asegurar tus entradas a <strong>DOCS Vol. 1</strong> (€15 c/u), realiza el pago vía Pago Móvil o
+            <p>Para asegurar tus entradas a <strong>DOCS</strong> (€3 c/u), realiza el pago vía Pago Móvil o
                 Zelle y envía el comprobante.</p>
 
             <div class="payment-info">
                 <div class="bank-details">
                     <h4>Pago Móvil</h4>
-                    <p>Banco: Banesco (0134)</p>
-                    <p>Cédula: V-12345678</p>
-                    <p>Teléfono: 0414-1234567</p>
+                    <p class="copyable" onclick="copyText('0172')" title="Copiar Banco">Banco: Bancamiga (0172) <i class="fa-regular fa-copy"></i></p>
+                    <p class="copyable" onclick="copyText('1.31253699')" title="Copiar Cédula">Cédula: 1.31253699 <i class="fa-regular fa-copy"></i></p>
+                    <p class="copyable" onclick="copyText('04247509224')" title="Copiar Teléfono">Teléfono: 0424-7509224 <i class="fa-regular fa-copy"></i></p>
                     <p>Monto: <strong id="monto-bs" class="highlight">Cargando tasa BCV...</strong></p>
                 </div>
                 <div class="bank-details">

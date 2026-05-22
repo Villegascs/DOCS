@@ -222,3 +222,31 @@ window.addEventListener('click', (event) => {
         closePaymentModal();
     }
 });
+
+// Function to copy text to clipboard
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.createElement('div');
+        toast.innerText = '¡Copiado!';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = 'var(--primary-neon)';
+        toast.style.color = '#000';
+        toast.style.padding = '8px 16px';
+        toast.style.borderRadius = '20px';
+        toast.style.zIndex = '10000';
+        toast.style.fontWeight = 'bold';
+        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.3s ease';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }).catch(err => {
+        console.error('Error al copiar: ', err);
+    });
+}
