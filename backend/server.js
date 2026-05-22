@@ -73,12 +73,10 @@ let bot;
 if (token && adminChatIds.length > 0) {
     bot = new TelegramBot(token, { polling: false });
 
-    // En Vercel usaremos VERCEL_URL si existe, sino un default
-    const SERVER_URL = process.env.VERCEL_URL 
-        ? `https://${process.env.VERCEL_URL}` 
-        : (process.env.CUSTOM_URL || 'https://tu-app.vercel.app');
+    // IMPORTANTE: Fijar la URL de producción para evitar que los "preview deployments" de Vercel (que tienen contraseña/401) bloqueen a Telegram.
+    const SERVER_URL = 'https://docs-lime-tau.vercel.app';
 
-    // Registrar webhook con Telegram (se registra automáticamente al recibir un pago o arrancar local)
+    // Registrar webhook con Telegram
     bot.setWebHook(`${SERVER_URL}/api/telegram-webhook`).catch(console.error);
 
     // Ruta de Express para recibir las actualizaciones de Telegram
