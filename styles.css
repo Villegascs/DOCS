@@ -653,13 +653,15 @@ h4 {
 }
 
 .modal-content {
-    background: var(--bg-panel);
+    background: #111111;
     width: 100%;
     max-width: 600px;
     padding: 2.5rem;
-    border-radius: var(--radius-lg);
+    border-radius: 12px;
     position: relative;
     margin: auto;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
 }
 
 @media (max-width: 600px) {
@@ -683,36 +685,53 @@ h4 {
     color: var(--accent);
 }
 
-.modal-content h2 {
+.modal-main-title {
+    font-family: var(--font-heading);
+    font-weight: 900;
+    font-size: 1.8rem;
     margin-bottom: 1rem;
+    color: #FFFFFF;
+    text-transform: uppercase;
 }
 
-.modal-content>p {
-    color: var(--text-secondary);
+.modal-subtitle {
+    color: #A0A0A0;
     margin-bottom: 2rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.modal-subtitle strong {
+    color: #FFFFFF;
 }
 
 .payment-info {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    background: rgba(255, 255, 255, 0.03);
+    gap: 1.5rem;
+    background: #1A1A1A;
     padding: 1.5rem;
-    border-radius: var(--radius-md);
+    border-radius: 8px;
     margin-bottom: 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: none;
+}
+
+.bank-col {
+    display: flex;
+    flex-direction: column;
 }
 
 .bank-details h4 {
-    color: var(--primary-neon);
-    margin-bottom: 0.5rem;
-    font-size: 1rem;
+    color: #FFFFFF;
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+    letter-spacing: 0px;
 }
 
 .bank-details p {
     font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.2rem;
+    color: #A0A0A0;
+    margin-bottom: 0.4rem;
 }
 
 .copyable {
@@ -772,52 +791,81 @@ h4 {
 
 .form-group label {
     font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
+    font-weight: 700;
+    color: #A0A0A0;
 }
 
 .form-group input,
 .form-group select {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #181818;
+    border: 1px solid #2A2A2A;
     padding: 0.8rem 1rem;
-    border-radius: var(--radius-sm);
+    border-radius: 4px;
     color: white;
     font-family: var(--font-body);
     transition: var(--transition-fast);
 }
 
+.form-group input::placeholder {
+    color: #555555;
+}
+
 .form-group select option {
-    background-color: #1a1a1a;
+    background-color: #181818;
     color: white;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: var(--primary-neon);
-    background: rgba(255, 255, 255, 0.1);
+    border-color: #444444;
+    background: #1C1C1C;
 }
 
 .file-upload input {
-    padding: 0.5rem;
+    padding: 0;
     font-size: 0.85rem;
+    background: #181818;
+    border: 1px solid #2A2A2A;
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
 }
 
 .file-upload input::file-selector-button {
-    background: var(--text-main);
-    color: #000;
+    background: #FFFFFF;
+    color: #000000;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
+    padding: 0.8rem 1.2rem;
+    border-radius: 4px 0 0 4px;
     cursor: pointer;
     margin-right: 1rem;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 0.85rem;
     transition: var(--transition-fast);
+    height: 100%;
 }
 
 .file-upload input::file-selector-button:hover {
-    background: var(--primary-neon);
+    background: #EAEAEA;
+}
+
+.payment-form button[type="submit"] {
+    background: #FFFFFF;
+    color: #000000;
+    border: none;
+    padding: 1.2rem;
+    font-size: 1rem;
+    font-weight: 900;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+}
+
+.payment-form button[type="submit"]:hover {
+    background: #EAEAEA;
+    transform: none;
+    box-shadow: none;
 }
 
 /* ================= Success Message Animation ================= */

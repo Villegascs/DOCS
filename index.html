@@ -155,35 +155,31 @@
 
     <!-- Payment Modal (Hidden by default) -->
     <div id="paymentModal" class="modal">
-        <div class="modal-content glass-panel">
+        <div class="modal-content glass-panel custom-modal">
             <span class="close-modal" onclick="closePaymentModal()">&times;</span>
-            <h2>Verificación de <span class="highlight">Pago</span></h2>
-            <p>Para asegurar tus entradas a <strong>DOCS</strong> (€3 c/u), realiza el pago vía Pago Móvil,
-                Zelle o Binance y envía el comprobante.</p>
+            <h2 class="modal-main-title">VERIFICACIÓN DE PAGO</h2>
+            <p class="modal-subtitle">Para asegurar tus entradas a <strong>DOCS</strong> (€3 c/u), realiza el pago vía Pago Móvil, Zelle o Binance y envía el comprobante.</p>
 
             <div class="payment-info">
-                <div class="bank-details">
-                    <h4>Pago Móvil</h4>
-                    <p class="copyable" onclick="copyText('0172')" title="Copiar Banco">Banco: Bancamiga (0172) <i
-                            class="fa-regular fa-copy"></i></p>
-                    <p class="copyable" onclick="copyText('31253699')" title="Copiar Cédula">Cédula: 31253699 <i
-                            class="fa-regular fa-copy"></i></p>
-                    <p class="copyable" onclick="copyText('04247509224')" title="Copiar Teléfono">Teléfono: 0424-7509224
-                        <i class="fa-regular fa-copy"></i>
-                    </p>
-                    <p>Monto: <strong id="monto-bs" class="highlight">Cargando tasa BCV...</strong></p>
+                <div class="bank-col">
+                    <div class="bank-details">
+                        <h4>PAGO MÓVIL</h4>
+                        <p class="copyable" onclick="copyText('0172')" title="Copiar Banco">Banco: Bancamiga (0172)</p>
+                        <p class="copyable" onclick="copyText('31253699')" title="Copiar Cédula">Cédula: 31253699</p>
+                        <p class="copyable" onclick="copyText('04247509224')" title="Copiar Teléfono">Teléfono: 0424-7509224</p>
+                        <p>Monto: <strong id="monto-bs" style="color: white;">Cargando...</strong> <span id="tasa-bcv-text" style="font-size: 0.8rem; color: #888;"></span></p>
+                    </div>
+                    <div class="bank-details" style="margin-top: 1.5rem;">
+                        <h4>BINANCE (USDT)</h4>
+                        <p class="copyable" onclick="copyText('zbcaj33@gmail.com')" title="Copiar Correo Binance">Correo (Binance Pay): zbcaj33@gmail.com</p>
+                    </div>
                 </div>
-                <div class="bank-details">
-                    <h4>Zelle</h4>
-                    <p class="copyable" onclick="copyText('contactofabianramirez@gmail.com')" title="Copiar Correo">
-                        Correo: contactofabianramirez@gmail.com <i class="fa-regular fa-copy"></i></p>
-                    <p class="copyable" onclick="copyText('Fabian Ramirez')" title="Copiar Titular">Titular: Fabian
-                        Ramirez <i class="fa-regular fa-copy"></i></p>
-                </div>
-                <div class="bank-details" style="grid-column: 1 / -1; margin-top: -0.5rem;">
-                    <h4>Binance (USDT)</h4>
-                    <p class="copyable" onclick="copyText('zbcaj33@gmail.com')" title="Copiar Correo Binance">
-                        Correo (Binance Pay): zbcaj33@gmail.com <i class="fa-regular fa-copy"></i></p>
+                <div class="bank-col">
+                    <div class="bank-details">
+                        <h4>ZELLE</h4>
+                        <p class="copyable" onclick="copyText('contactofabianramirez@gmail.com')" title="Copiar Correo">Correo: contactofabianramirez@gmail.com</p>
+                        <p class="copyable" onclick="copyText('Fabian Ramirez')" title="Copiar Titular">Titular: Fabian Ramirez</p>
+                    </div>
                 </div>
             </div>
 
